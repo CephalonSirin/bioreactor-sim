@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bioreactor Lab — Interactive Biotechnology Laboratory</title>
+    <meta
+      name="description"
+      content="Run batch, fed-batch and CSTR bioreactors in your browser. An interactive teaching laboratory built on Monod kinetics and real mass balances, with an animated reactor, live charts, guided experiments and a classroom mode."
+    />
+    <meta name="theme-color" content="#050c0e" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="author" content="Bioreactor Lab" />
+    <meta name="keywords" content="bioreactor, bioprocess, Monod kinetics, fed-batch, CSTR, washout, biotechnology education, simulation" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Bioreactor Lab" />
+    <meta property="og:title" content="Bioreactor Lab — Interactive Biotechnology Laboratory" />
+    <meta
+      property="og:description"
+      content="Watch a culture grow, starve, or wash out. Batch, fed-batch and CSTR simulations with an animated reactor, live metrics and the science explained."
+    />
+    <meta property="og:image" content="%VITE_SITE_URL%/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A bioreactor vessel beside the title Bioreactor Lab" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Bioreactor Lab — Interactive Biotechnology Laboratory" />
+    <meta name="twitter:description" content="Batch, fed-batch and CSTR bioreactor simulations you can run in your browser." />
+    <meta name="twitter:image" content="%VITE_SITE_URL%/og-image.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Bioreactor Lab",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Any (web browser)",
+        "description": "Interactive educational simulation of batch, fed-batch and continuous stirred-tank bioreactors.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
+  </head>
+  <body>
+    <noscript>Bioreactor Lab needs JavaScript to run the simulations. Please enable it in your browser.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

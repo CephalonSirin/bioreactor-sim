@@ -1,0 +1,247 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --line: rgba(120, 200, 192, 0.14);
+  --line-strong: rgba(120, 200, 192, 0.3);
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-ink-950 font-sans text-paper antialiased;
+  background-image:
+    radial-gradient(1100px 520px at 78% -8%, rgba(70, 224, 200, 0.09), transparent 60%),
+    radial-gradient(900px 520px at 4% 30%, rgba(240, 181, 69, 0.05), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Faint laboratory graph-paper grid behind everything */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(120, 200, 192, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 200, 192, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 85%);
+}
+
+h1,
+h2,
+h3 {
+  @apply font-display tracking-tight;
+}
+
+::selection {
+  background: rgba(70, 224, 200, 0.28);
+}
+
+:focus-visible {
+  outline: 2px solid #46e0c8;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- Surfaces ---------- */
+.glass {
+  background: linear-gradient(180deg, rgba(23, 42, 48, 0.62), rgba(10, 20, 23, 0.72));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 14px 40px -16px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.well {
+  background: rgba(5, 12, 14, 0.55);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+/* Instrument-style corner ticks: the site's signature detail */
+.frame {
+  position: relative;
+}
+.frame::before,
+.frame::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: rgba(70, 224, 200, 0.55);
+  border-style: solid;
+  pointer-events: none;
+}
+.frame::before {
+  top: -1px;
+  left: -1px;
+  border-width: 1.5px 0 0 1.5px;
+  border-top-left-radius: 10px;
+}
+.frame::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 1.5px 1.5px 0;
+  border-bottom-right-radius: 10px;
+}
+
+.eyebrow {
+  @apply font-mono text-[11px] uppercase tracking-[0.18em] text-aqua;
+}
+
+.readout-value {
+  @apply font-mono tracking-tight;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition duration-200 disabled:cursor-not-allowed disabled:opacity-40;
+}
+.btn-primary {
+  @apply btn border-aqua bg-aqua text-ink-950 hover:bg-[#7ff0dc] hover:shadow-glow;
+}
+.btn-ghost {
+  @apply btn border-ink-500 bg-ink-800/60 text-paper hover:border-aqua hover:text-aqua;
+}
+.btn-sm {
+  @apply px-3 py-1.5 text-xs;
+}
+
+/* ---------- Reveal on scroll ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Reactor animation helpers (transform/opacity only) ---------- */
+.bubble {
+  animation: bubble-rise var(--dur, 4s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.cell {
+  animation: drift var(--dur, 6s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+.blade {
+  animation: blade var(--spin, 0.9s) ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.flowline {
+  stroke-dasharray: 8 16;
+  animation: flow var(--flow, 1s) linear infinite;
+}
+.wave {
+  animation: wave 3.2s linear infinite;
+}
+@keyframes wave {
+  to {
+    transform: translateX(-80px);
+  }
+}
+.viz-paused .wave,
+.viz-paused .bubble,
+.viz-paused .cell,
+.viz-paused .blade,
+.viz-paused .flowline {
+  animation-play-state: paused;
+}
+
+/* ---------- Range sliders ---------- */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--slider-fill, #34525a) 0%,
+    var(--slider-fill, #34525a) var(--slider-pct, 50%),
+    #22393f var(--slider-pct, 50%),
+    #22393f 100%
+  );
+  outline: none;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #e8eeed;
+  border: 2px solid var(--slider-fill, #34525a);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  transition: transform 0.15s;
+}
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #e8eeed;
+  border: 2px solid var(--slider-fill, #34525a);
+}
+
+/* ---------- Math ---------- */
+.math {
+  @apply font-math italic;
+}
+.math sub,
+.math sup {
+  font-size: 0.72em;
+  line-height: 0;
+}
+
+summary {
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
