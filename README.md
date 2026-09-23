@@ -6,7 +6,7 @@ An interactive teaching laboratory for bioprocess kinetics. Run batch, fed-batch
 
 ## Features
 
-- **Home**: animated hero whose reactor plays a real simulation on a loop, mode overview, experiment teasers.
+- **Home**: animated home whose reactor plays a real simulation on a loop, mode overview, experiment teasers.
 - **Bioreactor Lab**: reactor selector, parameter panel with validation, animated reactor, 8 live metric cards, playback (run, pause, resume, reset, 1–20× speed, scrubbable timeline), charts with series toggles / tooltips / PNG export, rule-based "What happened?" insights, and a comparison table.
 - **Experiments**: 8 curated scenarios (Healthy Batch Growth, Substrate Limited, Fast Growth, High Feed Fed-Batch, Controlled Fed-Batch, Low Feed, Stable CSTR, CSTR Washout), each with the science explained and a real sparkline. Pick any two to overlay them in the Lab.
 - **Learn**: ten concept-first topics with interactive explainers (Monod curve, Luedeking–Piret, yield, dilution rate, steady state vs washout).
