@@ -45,10 +45,17 @@ After you know the public URL, set `VITE_SITE_URL=https://your-site.example` (ho
 ```
 src/simulation/   pure model: kinetics, mass balances, RK4, metrics, presets, validation, export
 src/hooks/        simulation engine (reducer + playback), hash router
-src/components/   viz (reactor SVG), lab, learn, home, layout, ui
+src/components/   viz3d (WebGL reactor + HUD), viz (SVG fallback), lab, learn, home, layout, ui
 src/pages/        Home, Learn, Experiments, Methodology (Lab lives in components/lab)
 src/content/      equation text and topic lists shown across the site
 ```
+
+## Architecture notes
+
+- The simulation (`src/simulation/`) is pure TypeScript with no UI dependencies. A run is integrated once with RK4; playback only reveals a slice of that trajectory, so the charts, metric cards and reactor always show the same data.
+- The 3D reactor (`src/components/viz3d/`) maps each simulated state to visual targets in `visualState.ts` (level from V, turbidity and cells from X, particles from S and P, gas from aeration plus μX, flows from F or D·V). The three.js scene is lazy-loaded and damps toward those targets every frame, so simulation updates never re-render the scene graph.
+- If WebGL 2 is unavailable, the SVG reactor in `src/components/viz/` is shown instead. Low-power devices get fewer particles, and `prefers-reduced-motion` is respected.
+- Impeller speed is a visual setting; it is not a model variable.
 
 ## References
 

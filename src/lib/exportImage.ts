@@ -48,3 +48,35 @@ export async function downloadSvgAsPng(
     URL.revokeObjectURL(url)
   }
 }
+
+/** Saves a rendered WebGL frame (already copied to a 2D canvas) as a PNG with a caption strip. */
+export async function downloadCanvasAsPng(
+  frame: HTMLCanvasElement,
+  filename: string,
+  { background = '#0a1214', caption }: { background?: string; caption?: string } = {}
+) {
+  const scale = Math.min(window.devicePixelRatio || 1, 2)
+  const captionH = caption ? Math.round(34 * Math.min(scale, 2)) : 0
+  const canvas = document.createElement('canvas')
+  canvas.width = frame.width
+  canvas.height = frame.height + captionH
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas is not available in this browser.')
+  const g = ctx.createLinearGradient(0, 0, 0, frame.height)
+  g.addColorStop(0, '#0b1a1e')
+  g.addColorStop(1, '#050c0e')
+  ctx.fillStyle = background
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, frame.width, frame.height)
+  ctx.drawImage(frame, 0, 0)
+  if (caption) {
+    const k = captionH / 34
+    ctx.fillStyle = '#9fb3b0'
+    ctx.font = `${Math.round(12 * k)}px "IBM Plex Mono", monospace`
+    ctx.fillText(caption, 14 * k, frame.height + 21 * k)
+  }
+  const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/png'))
+  if (!blob) throw new Error('Image export failed.')
+  downloadBlob(filename, blob)
+}

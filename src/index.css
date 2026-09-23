@@ -122,6 +122,61 @@ h3 {
   @apply px-3 py-1.5 text-xs;
 }
 
+/* ---------- 3D reactor stage + HUD ---------- */
+.reactor-stage {
+  background:
+    radial-gradient(120% 80% at 50% 110%, rgba(70, 224, 200, 0.07), transparent 60%),
+    linear-gradient(180deg, rgba(9, 20, 24, 0.92), rgba(4, 10, 12, 0.96));
+  isolation: isolate;
+}
+/* Hero: no panel, the scene dissolves into the page. */
+.reactor-stage.stage-bare {
+  background: transparent;
+  -webkit-mask-image: radial-gradient(64% 58% at 50% 47%, #000 60%, transparent 100%);
+  mask-image: radial-gradient(64% 58% at 50% 47%, #000 60%, transparent 100%);
+}
+.reactor-stage:focus-visible {
+  outline: 2px solid #46e0c8;
+  outline-offset: -2px;
+}
+.stage-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 46% at 50% 52%, rgba(70, 224, 200, 0.13), transparent 70%),
+    radial-gradient(60% 40% at 50% 100%, rgba(240, 181, 69, 0.06), transparent 70%);
+  transition: opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reactor-stage canvas {
+  display: block;
+}
+.hud-tag {
+  background: linear-gradient(180deg, rgba(14, 30, 35, 0.66), rgba(6, 14, 17, 0.72));
+  border: 1px solid var(--line);
+  border-left-width: 2px;
+  border-radius: 7px;
+  padding: 6px 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px -14px rgba(0, 0, 0, 0.8);
+}
+.hud-panel {
+  background: rgba(6, 14, 17, 0.78);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: rise-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hud-btn {
+  @apply inline-flex h-8 min-w-[2rem] items-center justify-center rounded-md border border-ink-500/80 bg-ink-900/70 text-sm text-paper transition-colors duration-200 hover:border-aqua hover:text-aqua;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
 /* ---------- Reveal on scroll ---------- */
 .reveal {
   opacity: 0;

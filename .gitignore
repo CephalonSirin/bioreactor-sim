@@ -3,3 +3,7 @@ dist
 *.tsbuildinfo
 .vercel
 .netlify
+
+# Local assistant notes
+CLAUDE.md
+.claude

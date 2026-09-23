@@ -7,11 +7,12 @@ import SimulationControls from './SimulationControls'
 import ChartPanel from './ChartPanel'
 import InsightsPanel from './InsightsPanel'
 import ScienceCard from './ScienceCard'
-import ReactorViz from '../viz/ReactorViz'
+import ReactorStage from '../viz3d/ReactorStage'
+import type { CaptureFn } from '../viz3d/ReactorCanvas'
 import { defaultConfigFor, PRESETS } from '../../simulation/presets'
 import type { Preset } from '../../simulation/presets'
 import { experimentToJson, exportFilename, trajectoryToCsv, downloadCsv, downloadJson } from '../../simulation/exportCsv'
-import { downloadSvgAsPng } from '../../lib/exportImage'
+import { downloadCanvasAsPng, downloadSvgAsPng } from '../../lib/exportImage'
 import type { SimulationEngine } from '../../hooks/useSimulationEngine'
 import type { ReactorType } from '../../simulation/types'
 
@@ -30,6 +31,7 @@ const isTypingTarget = (t: EventTarget | null) => {
 
 export default function LabPage({ engine, presenting, onPresentingChange }: LabPageProps) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const captureRef = useRef<CaptureFn | null>(null)
   const [exportError, setExportError] = useState<string | null>(null)
   const { config, runConfig, currentPoint, extents, running, playbackIndex } = engine
 
@@ -63,11 +65,12 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
     )
   })
   const handleImage = guard(async () => {
-    if (!svgRef.current) return
     const t = currentPoint ? `t = ${currentPoint.t.toFixed(1)} h` : 'initial state'
-    await downloadSvgAsPng(svgRef.current, `${fileBase || 'bioreactor'}_reactor.png`, {
-      caption: `${engine.runLabel} · ${t} · Bioreactor Lab (educational model)`,
-    })
+    const name = `${fileBase || 'bioreactor'}_reactor.png`
+    const caption = `${engine.runLabel} · ${t} · Bioreactor Lab (educational model)`
+    const frame = captureRef.current?.()
+    if (frame) await downloadCanvasAsPng(frame, name, { caption })
+    else if (svgRef.current) await downloadSvgAsPng(svgRef.current, name, { caption })
   })
 
   // Keyboard: Space = play/pause, R = run, P = presentation mode, Esc = exit.
@@ -122,33 +125,28 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
   )
 
   const reactorCard = (
-    <div className="glass frame flex flex-col p-4">
-      <div className="mb-2 flex items-center justify-between gap-2">
+    <div className="glass frame flex flex-col overflow-hidden p-0">
+      <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-3">
         <div className="min-w-0">
           <div className="eyebrow">Live reactor</div>
           <div className={`truncate font-display font-semibold ${presenting ? 'text-xl' : 'text-sm'}`}>{engine.runLabel}</div>
         </div>
-        <span
-          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider ${
-            engine.isPlaying ? 'border-aqua/60 text-aqua' : 'border-ink-500 text-muted'
-          }`}
-          role="status"
-        >
-          <span className={`h-1.5 w-1.5 rounded-full ${engine.isPlaying ? 'animate-pulse bg-aqua' : 'bg-ink-500'}`} />
-          {engine.isPlaying ? 'running' : engine.hasResult ? 'paused' : 'idle'}
-        </span>
+        <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-wider text-dim sm:block">drag to orbit · click + scroll to zoom</span>
       </div>
-      <ReactorViz
+      <ReactorStage
+        variant="lab"
         svgRef={svgRef}
+        captureRef={captureRef}
         point={currentPoint}
         config={shownConfig}
         extents={extents}
         playing={engine.isPlaying}
-        className={`mx-auto h-auto w-full ${presenting ? 'max-w-[560px]' : 'max-w-[400px]'}`}
+        large={presenting}
+        className={presenting ? 'h-[68vh] min-h-[480px]' : 'h-[440px] sm:h-[540px] xl:h-[600px]'}
       />
-      <p className="mt-2 text-[11px] leading-snug text-dim">
-        Liquid level = volume · turbidity and amber cells = biomass · teal dots = substrate · coral dots = product · bubbles rise faster with growth activity μX.
-        Drawn from the simulated state.
+      <p className="px-4 pb-3 pt-2.5 text-[11px] leading-snug text-dim">
+        Liquid level = volume · turbidity and amber cells = biomass X · teal glow = substrate S · coral rings = product P · gas = aeration + growth activity μX · streams = feed F and effluent D·V.
+        Every element is drawn from the simulated state at this instant.
       </p>
     </div>
   )
@@ -238,7 +236,7 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
           ))}
         </div>
         {banner}
-        <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(360px,600px)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(340px,1fr)]">
           {reactorCard}
           <div className="flex flex-col gap-5">
             {metrics}
@@ -278,7 +276,7 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
         </div>
 
         <div className="order-1 flex min-w-0 flex-col gap-5 xl:order-none xl:col-start-2 xl:row-start-1">
-          <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(300px,420px)_minmax(0,1fr)]">
+          <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(300px,1fr)]">
             {reactorCard}
             <div className="flex flex-col gap-5">
               {metrics}
