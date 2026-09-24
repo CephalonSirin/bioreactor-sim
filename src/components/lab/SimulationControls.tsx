@@ -25,6 +25,8 @@ interface SimulationControlsProps {
   large?: boolean
   /** Rendered at the start of the button row (the panel heading). */
   lead?: React.ReactNode
+  /** Extra control after reset (the run-length menu). */
+  extra?: React.ReactNode
 }
 
 const SPEEDS = [1, 2, 4, 8, 20].map((s) => ({ value: s, label: `${s}×`, title: `${s} simulated hour${s > 1 ? 's' : ''} per second` }))
@@ -45,7 +47,7 @@ function TimelineStrip({ points }: { points: SimPoint[] }) {
   }, [points])
   if (!paths) return null
   return (
-    <svg viewBox="0 0 1000 32" preserveAspectRatio="none" className="pointer-events-none absolute inset-x-0 top-0 h-full w-full" aria-hidden="true">
+    <svg viewBox="0 0 1000 32" preserveAspectRatio="none" className="sweep pointer-events-none absolute inset-x-0 top-0 h-full w-full" aria-hidden="true">
       <path d={paths.area} fill={SERIES.X} opacity="0.08" />
       <path d={paths.s} fill="none" stroke={SERIES.S} strokeWidth="1.2" opacity="0.45" vectorEffect="non-scaling-stroke" />
       <path d={paths.x} fill="none" stroke={SERIES.X} strokeWidth="1.4" opacity="0.7" vectorEffect="non-scaling-stroke" />
@@ -72,6 +74,7 @@ function SimulationControls({
   onSpeedChange,
   large = false,
   lead,
+  extra,
 }: SimulationControlsProps) {
   const atEnd = hasResult && progress >= 1
   const started = hasResult && progress > 0
@@ -99,6 +102,7 @@ function SimulationControls({
             <RotateCcw aria-hidden="true" />
           </button>
         </div>
+        {extra}
         <div className="ml-auto flex items-center gap-2">
           <span className="t-label hidden sm:inline">Speed</span>
           <Segmented value={speed} options={SPEEDS} onChange={onSpeedChange} label="Playback speed, simulated hours per second" itemClassName="!px-2 font-mono !text-label" />
@@ -107,7 +111,7 @@ function SimulationControls({
 
       <div className="flex items-center gap-3">
         <div className="relative h-8 min-w-0 flex-1">
-          {hasResult && <TimelineStrip points={points} />}
+          {hasResult && <TimelineStrip key={points.length ? points[points.length - 1].t + points[points.length - 1].X : 0} points={points} />}
           <div className="absolute inset-x-0 bottom-0 h-px bg-line" aria-hidden="true" />
           {hasResult && (
             // Playhead, aligned with the range thumb's centre (14 px thumb).

@@ -106,7 +106,7 @@ function InsightsPanel({ metrics, interpretation, config, runLabel, baseline, la
               </tr>
             </thead>
             <tbody>
-              {ROWS.map((r) => {
+              {ROWS.map((r, i) => {
                 const cur = r.get(metrics)
                 const base = baseline ? r.get(baseline.metrics) : null
                 const d = base !== null ? delta(base, cur) : null
@@ -116,7 +116,11 @@ function InsightsPanel({ metrics, interpretation, config, runLabel, baseline, la
                       {r.label} <span className="font-mono text-micro text-ink-3">{r.unit}</span>
                     </th>
                     {baseline && <td className="num text-right font-mono text-ink-3">{fmt(base, r.digits)}</td>}
-                    <td className="num text-right font-mono text-ink">{fmt(cur, r.digits)}</td>
+                    <td className="num text-right font-mono text-ink">
+                      <span key={fmt(cur, r.digits)} className="num-pop" style={{ ['--i' as string]: i }}>
+                        {fmt(cur, r.digits)}
+                      </span>
+                    </td>
                     {d && <td className={`num !pr-0 text-right font-mono ${d.sign === 0 ? 'text-ink-3' : 'text-ink'}`}>{d.text}</td>}
                   </tr>
                 )

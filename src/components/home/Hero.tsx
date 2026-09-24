@@ -28,7 +28,8 @@ function useDemoRun() {
   }, [])
 }
 
-const rise = (i: number) => ({ ['--d' as string]: `${120 + i * 70}ms` })
+const rise = (i: number) => ({ ['--d' as string]: `${420 + i * 90}ms` })
+const HEADLINE = 'Watch a culture grow, starve or wash out.'
 
 export default function Hero() {
   const demo = useDemoRun()
@@ -104,10 +105,13 @@ export default function Hero() {
     <section ref={hero} className="relative overflow-hidden border-b border-line" aria-labelledby="hero-title">
       <div className="mx-auto grid max-w-page items-center gap-x-10 px-4 sm:px-6 lg:min-h-[calc(100svh-var(--nav-h))] lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
         <div className={`relative z-10 pb-10 pt-6 lg:py-20 ${fade}`}>
-          <h1 id="hero-title" className="t-display max-w-[12ch] text-ink">
-            <span className="rise block" style={rise(0)}>
-              Watch a culture grow, starve or wash out.
-            </span>
+          <h1 id="hero-title" className="t-display max-w-[12ch] text-ink" aria-label={HEADLINE}>
+            {HEADLINE.split(' ').map((w, i) => (
+              <span key={i} className="word-rise" style={{ ['--i' as string]: i }}>
+                {w}
+                {i < HEADLINE.split(' ').length - 1 ? '\u00a0' : ''}
+              </span>
+            ))}
           </h1>
           <p className="rise t-lede mt-6 max-w-[34rem]" style={rise(1)}>
             Bioreactor Lab simulates batch, fed-batch and continuous stirred-tank reactors in your browser. Monod kinetics and mass balances, integrated with a Runge–Kutta solver, drive the vessel, the measurements and the figures from one trajectory.

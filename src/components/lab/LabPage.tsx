@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, Download, FileJson, FileSpreadsheet, Image as ImageIcon, Presentation, RotateCcw, X } from 'lucide-react'
+import { Check, ChevronDown, Download, FileJson, FileSpreadsheet, Image as ImageIcon, Keyboard, Pause, Play, Presentation, RotateCcw, X } from 'lucide-react'
 import ReactorSelector from './ReactorSelector'
 import ParameterPanel from './ParameterPanel'
 import MetricCards from './MetricCards'
@@ -7,6 +7,8 @@ import SimulationControls from './SimulationControls'
 import ChartPanel from './ChartPanel'
 import InsightsPanel from './InsightsPanel'
 import ScienceCard from './ScienceCard'
+import DurationMenu from './DurationMenu'
+import { toast } from '../../lib/toast'
 import Popover from '../ui/Popover'
 import ReactorStage from '../viz3d/ReactorStage'
 import { PHASE_LABEL, visualSnapshot } from '../viz3d/visualState'
@@ -94,14 +96,33 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
       setExportError(null)
       await fn()
     } catch (e) {
-      setExportError(e instanceof Error ? e.message : 'Export failed.')
+      const msg = e instanceof Error ? e.message : 'Export failed.'
+      setExportError(msg)
+      toast('Export failed', msg, 'error')
     }
   }, [])
+
+  const { setConfig, setBaseline, runLabel: currentRun } = engine
+  const saveBaseline = useCallback(() => {
+    setBaseline()
+    toast('Saved as baseline', `${currentRun} is now drawn dashed on the figures`)
+  }, [setBaseline, currentRun])
+
+  // Run length: re-integrate straight away with the new duration.
+  const setDuration = useCallback(
+    (hours: number) => {
+      setConfig({ ...config, settings: { ...config.settings, duration: hours } })
+      run()
+    },
+    [config, setConfig, run]
+  )
   const handleCsv = useCallback(
     () =>
       guard(() => {
         if (!fullResult) return
-        downloadCsv(exportFilename(runLabel, fullResult.config.settings.duration, 'csv'), trajectoryToCsv(fullResult))
+        const name = exportFilename(runLabel, fullResult.config.settings.duration, 'csv')
+        downloadCsv(name, trajectoryToCsv(fullResult))
+        toast('Trajectory exported', name)
       }),
     [guard, fullResult, runLabel]
   )
@@ -109,7 +130,9 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
     () =>
       guard(() => {
         if (!fullResult) return
-        downloadJson(exportFilename(runLabel, fullResult.config.settings.duration, 'json'), experimentToJson(fullResult, runMetrics, runLabel))
+        const name = exportFilename(runLabel, fullResult.config.settings.duration, 'json')
+        downloadJson(name, experimentToJson(fullResult, runMetrics, runLabel))
+        toast('Experiment record exported', name)
       }),
     [guard, fullResult, runMetrics, runLabel]
   )
@@ -126,6 +149,7 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
         const frame = captureRef.current?.()
         if (frame) await downloadCanvasAsPng(frame, name, { caption })
         else if (svgRef.current) await downloadSvgAsPng(svgRef.current, name, { caption })
+        toast('Vessel image saved', name)
       }),
     [guard, fileBase, runLabel]
   )
@@ -281,11 +305,47 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
               </button>
             </span>
           ) : (
-            <button type="button" onClick={engine.setBaseline} disabled={!hasResult} className="btn-secondary" title="Keep this run as a dashed reference on the figures">
+            <button type="button" onClick={saveBaseline} disabled={!hasResult} className="btn-secondary" title="Keep this run as a dashed reference on the figures">
               Save as baseline
             </button>
           )}
           {exportMenu}
+          <Popover
+            origin="top-right"
+            label="Keyboard shortcuts"
+            panelClassName="w-64"
+            className="hidden lg:block"
+            trigger={(t) => (
+              <button type="button" {...t} className="icon-btn !h-[34px] !w-[34px] border !border-line-strong bg-surface" aria-label="Keyboard shortcuts" title="Keyboard shortcuts">
+                <Keyboard aria-hidden="true" />
+              </button>
+            )}
+          >
+            {() => (
+              <div className="menu p-3">
+                <p className="mb-2 text-label font-semibold text-ink">Keyboard</p>
+                <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 text-label text-ink-2">
+                  {[
+                    ['Space', 'Play or pause'],
+                    ['R', 'Run the simulation'],
+                    ['P', 'Classroom mode'],
+                    ['Esc', 'Leave classroom mode'],
+                    ['← →', 'Rotate the vessel (when focused)'],
+                    ['+ −', 'Zoom the vessel'],
+                    ['0', 'Reset the camera'],
+                    ['↑ ↓', 'Step a numeric field (Shift ×10)'],
+                  ].map(([k, v], i) => (
+                    <div key={k} className="stagger-in contents" style={{ ['--i' as string]: i }}>
+                      <dt>
+                        <kbd>{k}</kbd>
+                      </dt>
+                      <dd>{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
+          </Popover>
           <button
             type="button"
             onClick={() => onPresentingChange(!presenting)}
@@ -326,8 +386,42 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
 
   const stageHeight = presenting ? 'h-[min(72vh,820px)]' : 'h-[clamp(380px,58vh,640px)]'
 
+  const mobileBar = !presenting && (
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 backdrop-blur-[10px] lg:hidden" role="region" aria-label="Playback">
+      <div className="relative h-[2px] bg-line" aria-hidden="true">
+        <div className="absolute inset-y-0 left-0 origin-left bg-ink" style={{ width: '100%', transform: `scaleX(${engine.progress})` }} />
+      </div>
+      <div className="flex items-center gap-2 px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        {engine.isPlaying ? (
+          <button type="button" onClick={engine.pause} className="icon-btn border border-line" aria-label="Pause playback">
+            <Pause className="fill-current" aria-hidden="true" />
+          </button>
+        ) : (
+          <button type="button" onClick={engine.play} disabled={!hasResult} className="icon-btn border border-line disabled:opacity-40" aria-label="Play">
+            <Play className="fill-current" aria-hidden="true" />
+          </button>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-label font-medium text-ink">
+            <span key={snap.phase} className="text-swap">
+              {PHASE_LABEL[snap.phase]}
+            </span>
+          </p>
+          <p className="num font-mono text-micro text-ink-3">
+            t = {(currentPoint?.t ?? 0).toFixed(1)} / {duration.toFixed(0)} h
+          </p>
+        </div>
+        <button type="button" onClick={engine.run} className={`${engine.stale || !hasResult ? 'btn-accent' : 'btn-secondary'} btn-sm`}>
+          <Play className="!h-3 !w-3 fill-current" aria-hidden="true" />
+          {engine.stale ? 'Run changes' : 'Run'}
+        </button>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="bg-canvas">
+    <div className="bg-canvas pb-16 lg:pb-0">
+      {mobileBar}
       {toolbar}
 
       <div className={`mx-auto grid max-w-[1680px] grid-cols-1 ${presenting ? '' : 'lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]'}`}>
@@ -365,7 +459,9 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
                 <div className="pointer-events-none absolute left-4 top-3.5 z-10 flex flex-col gap-0.5 sm:left-5">
                   <span className="flex items-center gap-2 text-label font-medium text-ink" role="status" aria-live="polite">
                     <span className={`h-1.5 w-1.5 rounded-full transition-colors duration-500 ${PHASE_TONE[snap.phase]}`} aria-hidden="true" />
-                    {PHASE_LABEL[snap.phase]}
+                    <span key={snap.phase} className="text-swap">
+                      {PHASE_LABEL[snap.phase]}
+                    </span>
                   </span>
                   <span className="num font-mono text-micro text-ink-3">
                     t = {(currentPoint?.t ?? 0).toFixed(1)} h
@@ -401,6 +497,7 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
                   onSeek={engine.seek}
                   onSpeedChange={engine.setSpeed}
                   large={presenting}
+                  extra={<DurationMenu value={config.settings.duration} reference={reference.settings.duration} onChange={setDuration} />}
                   lead={
                     <h2 className="mr-2 hidden items-baseline gap-2 text-ui font-semibold text-ink sm:flex">
                       <span className="num font-mono text-micro font-normal text-ink-4">2</span>

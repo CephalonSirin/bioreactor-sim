@@ -59,9 +59,9 @@ function PreviewFigure({ points, label }: { points: SimPoint[]; label: string })
       <text transform={`translate(10 ${f.pad.t + (f.H - f.pad.t - f.pad.b) / 2}) rotate(-90)`} textAnchor="middle" fontSize="10" fill={INK[3]} fontFamily={FONT.sans}>
         g/L
       </text>
-      <path d={f.S} fill="none" stroke={SERIES.S} strokeWidth="1.6" />
-      <path d={f.P} fill="none" stroke={SERIES.P} strokeWidth="1.6" />
-      <path d={f.X} fill="none" stroke={SERIES.X} strokeWidth="1.9" />
+      <path d={f.S} pathLength={1} className="draw-path" style={{ ['--i' as string]: 1 }} fill="none" stroke={SERIES.S} strokeWidth="1.6" />
+      <path d={f.P} pathLength={1} className="draw-path" style={{ ['--i' as string]: 2 }} fill="none" stroke={SERIES.P} strokeWidth="1.6" />
+      <path d={f.X} pathLength={1} className="draw-path" style={{ ['--i' as string]: 0 }} fill="none" stroke={SERIES.X} strokeWidth="1.9" />
     </svg>
   )
 }
@@ -152,7 +152,7 @@ function Entry({
             </div>
             {prev && (
               <figure className="w-full max-w-[480px]">
-                <PreviewFigure points={prev.points} label={`Simulated biomass, substrate and product for ${preset.label}`} />
+                <PreviewFigure key={open ? 'open' : 'closed'} points={prev.points} label={`Simulated biomass, substrate and product for ${preset.label}`} />
                 <figcaption className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-label text-ink-3">
                   {[
                     ['Biomass', SERIES.X],

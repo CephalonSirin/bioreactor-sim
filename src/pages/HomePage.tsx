@@ -54,7 +54,7 @@ export default function HomePage({ onLaunchReactor, onRunPreset }: HomePageProps
   }
   const run = (p: Preset) => {
     onRunPreset(p)
-    navigate('lab')
+    navigate('lab', p.id)
   }
 
   return (
@@ -72,8 +72,8 @@ export default function HomePage({ onLaunchReactor, onRunPreset }: HomePageProps
           </p>
         </Reveal>
 
-        <ol className="mt-14 grid border-t border-ink sm:grid-cols-2 lg:grid-cols-4">
-          <Reveal as="li" className="flex flex-col border-b border-line py-7 sm:pr-8 lg:border-b-0 lg:border-r">
+        <ol className="seq-rule mt-14 grid border-t border-line sm:grid-cols-2 lg:grid-cols-4">
+          <li className="seq-step flex flex-col border-b border-line py-7 sm:pr-8 lg:border-b-0 lg:border-r">
             <div className="flex h-24 items-end gap-3 text-ink-2">
               {(['batch', 'fedbatch', 'cstr'] as ReactorType[]).map((t) => (
                 <ReactorGlyph key={t} type={t} className="h-16 w-20" title={`${t} schematic`} />
@@ -84,8 +84,8 @@ export default function HomePage({ onLaunchReactor, onRunPreset }: HomePageProps
               <span className="block text-ui font-normal text-ink-3">Choose a configuration</span>
             </h3>
             <p className="mt-2 text-ui leading-relaxed text-ink-3">Batch, fed-batch or continuous. The choice decides what crosses the vessel boundary.</p>
-          </Reveal>
-          <Reveal as="li" delay={70} className="flex flex-col border-b border-line py-7 sm:pl-8 lg:border-b-0 lg:border-r lg:px-8">
+          </li>
+          <li className="seq-step flex flex-col border-b border-line py-7 sm:pl-8 lg:border-b-0 lg:border-r lg:px-8">
             <div className="flex h-24 flex-col justify-end gap-1 text-ink">
               <Eq className="text-[1.2rem]">{'μ = μ_{max} S / (K_{s} + S)'}</Eq>
               <Eq className="text-[1.2rem]">{'dX/dt = (μ − k_{d} − D) X'}</Eq>
@@ -95,8 +95,8 @@ export default function HomePage({ onLaunchReactor, onRunPreset }: HomePageProps
               <span className="block text-ui font-normal text-ink-3">Write the balances</span>
             </h3>
             <p className="mt-2 text-ui leading-relaxed text-ink-3">Monod growth, Luedeking–Piret product formation and one mass balance per state variable.</p>
-          </Reveal>
-          <Reveal as="li" delay={140} className="flex flex-col border-b border-line py-7 sm:pr-8 lg:border-b-0 lg:border-r lg:px-8">
+          </li>
+          <li className="seq-step flex flex-col border-b border-line py-7 sm:pr-8 lg:border-b-0 lg:border-r lg:px-8">
             <dl className="grid h-24 grid-cols-[auto_1fr] content-end gap-x-4 gap-y-1 font-mono text-label">
               {[
                 ['μmax', '0.40 h⁻¹'],
@@ -115,15 +115,15 @@ export default function HomePage({ onLaunchReactor, onRunPreset }: HomePageProps
               <span className="block text-ui font-normal text-ink-3">Set the conditions</span>
             </h3>
             <p className="mt-2 text-ui leading-relaxed text-ink-3">Kinetic constants, initial state, feed and run length, each with its unit and range.</p>
-          </Reveal>
-          <Reveal as="li" delay={210} className="flex flex-col py-7 sm:pl-8 lg:pl-8">
+          </li>
+          <li className="seq-step flex flex-col py-7 sm:pl-8 lg:pl-8">
             <div className="flex h-24 items-end">{healthy && <MiniFigure points={healthy.points} className="h-20 w-full" label="Biomass, substrate and product of the default batch run" />}</div>
             <h3 className="t-sub mt-6">
               Results
               <span className="block text-ui font-normal text-ink-3">Read the trajectory</span>
             </h3>
             <p className="mt-2 text-ui leading-relaxed text-ink-3">RK4 integrates the run once; playback, figures and exports all read the same result.</p>
-          </Reveal>
+          </li>
         </ol>
       </section>
 

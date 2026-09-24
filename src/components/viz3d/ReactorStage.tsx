@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import ReactorViz from '../viz/ReactorViz'
 import { Check, Crosshair, Layers3, Minus, Plus, Rotate3d } from 'lucide-react'
 import Popover from '../ui/Popover'
+import ReactorGlyph from '../viz/ReactorGlyph'
 import { ALL_LAYERS, LAYER_INFO, createBus } from './bus'
 import type { LayerKey, Layers } from './bus'
 import { PHASE_LABEL, visualSnapshot } from './visualState'
@@ -274,7 +275,10 @@ function ReactorStage({ point, config, extents, playing, variant, leaving = fals
           </Suspense>
           {!ready && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
-              <span className="t-meta">Loading 3D view…</span>
+              <span className="flex flex-col items-center gap-3 text-ink-4">
+                <ReactorGlyph type={config.reactorType} className="breathe flow-live h-24 w-32" />
+                <span className="text-label text-ink-3">Preparing the 3D vessel</span>
+              </span>
             </div>
           )}
         </GLBoundary>

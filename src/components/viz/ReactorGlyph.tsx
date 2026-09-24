@@ -20,14 +20,14 @@ export default function ReactorGlyph({ type, className = '', title }: { type: Re
       {/* feed */}
       {type !== 'batch' && (
         <g stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 5 H26 V14" />
+          <path className="flow-dash" d="M6 5 H26 V14" />
           <path d="M23.5 11.5 L26 14.5 L28.5 11.5" />
         </g>
       )}
       {/* effluent */}
       {type === 'cstr' && (
         <g stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M42 30 H55 V42" />
+          <path className="flow-dash" d="M42 30 H55 V42" />
           <path d="M52.5 39.5 L55 42.5 L57.5 39.5" />
         </g>
       )}
