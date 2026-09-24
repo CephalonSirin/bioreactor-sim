@@ -1,62 +1,90 @@
+<div align="center">
+
 # Bioreactor Lab
 
-An interactive teaching laboratory for bioprocess kinetics. Run batch, fed-batch and continuous (CSTR) bioreactors in the browser and watch an animated vessel, live metrics and charts respond to the same simulated state.
+**Watch a culture grow, starve, or wash out.**
 
-**Educational, simplified and deterministic.** Idealised mass balances, one limiting substrate. Not an industrial process simulator. The Methodology page lists every equation, unit and assumption.
+An interactive teaching laboratory for bioprocess kinetics. Run batch, fed-batch and continuous (CSTR) bioreactors in your browser, and watch a 3D vessel, live metrics and charts respond to the same simulated state.
 
-## Features
+[![Live demo](https://img.shields.io/badge/live_demo-open_the_lab-46e0c8?style=for-the-badge&labelColor=050c0e)](https://cephalonsirin.github.io/bioreactor-sim/)
+[![Deploy](https://img.shields.io/github/actions/workflow/status/CephalonSirin/bioreactor-sim/deploy.yml?branch=main&style=for-the-badge&label=deploy&labelColor=050c0e)](https://github.com/CephalonSirin/bioreactor-sim/actions/workflows/deploy.yml)
 
-- **Home**: animated home whose reactor plays a real simulation on a loop, mode overview, experiment teasers.
-- **Bioreactor Lab**: reactor selector, parameter panel with validation, animated reactor, 8 live metric cards, playback (run, pause, resume, reset, 1–20× speed, scrubbable timeline), charts with series toggles / tooltips / PNG export, rule-based "What happened?" insights, and a comparison table.
-- **Experiments**: 8 curated scenarios (Healthy Batch Growth, Substrate Limited, Fast Growth, High Feed Fed-Batch, Controlled Fed-Batch, Low Feed, Stable CSTR, CSTR Washout), each with the science explained and a real sparkline. Pick any two to overlay them in the Lab.
-- **Learn**: ten concept-first topics with interactive explainers (Monod curve, Luedeking–Piret, yield, dilution rate, steady state vs washout).
-- **Methodology**: equations with variables, units and physical meaning; numerical method; what each visual element encodes; assumptions and references.
-- **Presentation mode** (button or `P`): larger reactor, numbers and charts for a projector; `Esc` exits. `Space` plays/pauses, `R` re-runs.
-- **Export**: trajectory CSV, full experiment JSON (parameters + metrics + trajectory), reactor image, and per-chart PNGs, with descriptive filenames.
+<br />
+
+<a href="https://cephalonsirin.github.io/bioreactor-sim/">
+  <img src="public/og-image.png" alt="Bioreactor Lab: a bioreactor vessel beside the title" width="720" />
+</a>
+
+</div>
+
+<br />
+
+> **Educational, simplified and deterministic.** Idealised mass balances with one limiting substrate. It is a teaching tool, not an industrial process simulator. The Methodology page lists every equation, unit and assumption.
+
+## Highlights
+
+| | |
+|---|---|
+| **3D reactor** | A WebGL stirred tank: turbidity and amber cells track biomass, teal glow tracks substrate, coral rings track product, gas follows aeration plus growth activity, and feed and harvest lines run at the simulated flow. Orbit, zoom, and toggle visual layers. Falls back to an SVG drawing without WebGL 2. |
+| **Three reactor modes** | Batch, fed-batch and CSTR, with parameter validation and advisories (for example when `D` exceeds the critical dilution rate). |
+| **Live playback** | Run, pause, resume, reset, 1–20× speed and a scrubbable timeline. Reactor, 8 metric cards and charts always show the same trajectory point. |
+| **8 guided experiments** | Healthy Batch Growth, Substrate Limited, Fast Growth, High Feed Fed-Batch, Controlled Fed-Batch, Low Feed, Stable CSTR and CSTR Washout. Overlay any two to compare. |
+| **Learn and Methodology** | Ten concept-first topics with interactive explainers (Monod curve, Luedeking–Piret, yield, dilution rate, washout), plus every equation with variables, units and assumptions. |
+| **Classroom mode** | Press `P` for a larger reactor, numbers and charts. `Space` plays or pauses, `R` re-runs, `Esc` exits. |
+| **Export** | Trajectory CSV, full experiment JSON, reactor image and per-chart PNGs. |
 
 ## The model
 
-Monod growth `μ = μmax·S/(Ks+S)`, Luedeking–Piret product formation `qp = αμ + β`, substrate uptake `qS = μ/Yx/s + qp/Yp/s + ms`, and per-mode mass balances for biomass X, substrate S, product P and volume V, integrated with 4th-order Runge–Kutta. In a CSTR the critical dilution rate is `D_crit = μ(Sf) − kd`, and the analytical steady state is used as a check on the solver. Source of truth: `src/simulation/models.ts` and `kinetics.ts`.
+| | |
+|---|---|
+| Growth | Monod, `μ = μmax · S / (Ks + S)` |
+| Product | Luedeking–Piret, `qp = α·μ + β` |
+| Substrate uptake | `qS = μ / Yx/s + qp / Yp/s + ms` |
+| Balances | Per-mode mass balances for biomass `X`, substrate `S`, product `P` and volume `V` |
+| Solver | 4th-order Runge–Kutta, integrated once per run |
+| CSTR check | Critical dilution rate `D_crit = μ(Sf) − kd`; the analytical steady state validates the solver |
 
-## Develop
+Source of truth: [`src/simulation/`](src/simulation).
 
-Requires Node 18+.
+## Getting started
+
+Requires Node 20.19+ (or 22.12+).
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm run lint
-npm run build    # type-check + production bundle in dist/
-npm run preview
+npm run dev        # http://localhost:5173
 ```
 
-## Deploy
+| Script | What it does |
+|---|---|
+| `npm run dev` | Start the dev server |
+| `npm run lint` | ESLint |
+| `npm run build` | Type-check and build to `dist/` |
+| `npm run preview` | Serve the production build |
 
-It is a fully static site (hash routing, relative asset paths), so any static host works.
+## How it is built
 
-- **Vercel**: import the repo (or run `npx vercel`); `vercel.json` sets the build and cache headers.
-- **Netlify**: import the repo, or drag the `dist/` folder onto <https://app.netlify.com/drop>; `netlify.toml` is included.
-- **GitHub Pages**: push to a repo, enable Pages with source "GitHub Actions"; `.github/workflows/deploy.yml` builds and publishes on every push to `main`.
-
-After you know the public URL, set `VITE_SITE_URL=https://your-site.example` (host environment variable, or in `.env`) and rebuild so the Open Graph / Twitter preview image URL is absolute.
-
-## Structure
+**Stack:** React 18, TypeScript, Vite, Tailwind CSS, three.js via React Three Fiber, Recharts.
 
 ```
 src/simulation/   pure model: kinetics, mass balances, RK4, metrics, presets, validation, export
 src/hooks/        simulation engine (reducer + playback), hash router
 src/components/   viz3d (WebGL reactor + HUD), viz (SVG fallback), lab, learn, home, layout, ui
-src/pages/        Home, Learn, Experiments, Methodology (Lab lives in components/lab)
+src/pages/        Home, Learn, Experiments, Methodology (the Lab lives in components/lab)
 src/content/      equation text and topic lists shown across the site
 ```
 
-## Architecture notes
+- **One trajectory, everywhere.** A run is integrated once; playback only reveals a slice of it, so charts, metric cards and the reactor never disagree.
+- **The scene never re-renders per tick.** Simulation updates write to a mutable bus that the WebGL scene damps toward each frame, so playback does not touch the React scene graph.
+- **Cheap to run.** Particles and bubbles are GPU-instanced with the motion in the vertex shader, and only visible particles are drawn. Rendering runs at full rate only while something moves, and pixel ratio adapts to measured smoothness. Charts refresh at 10 Hz during playback and pause off-screen.
+- **Graceful everywhere.** Low-power devices get a lighter scene, `prefers-reduced-motion` is respected, and the SVG reactor takes over if WebGL 2 is unavailable.
 
-- The simulation (`src/simulation/`) is pure TypeScript with no UI dependencies. A run is integrated once with RK4; playback only reveals a slice of that trajectory, so the charts, metric cards and reactor always show the same data.
-- The 3D reactor (`src/components/viz3d/`) maps each simulated state to visual targets in `visualState.ts` (level from V, turbidity and cells from X, particles from S and P, gas from aeration plus μX, flows from F or D·V). The three.js scene is lazy-loaded and damps toward those targets every frame, so simulation updates never re-render the scene graph.
-- If WebGL 2 is unavailable, the SVG reactor in `src/components/viz/` is shown instead. Low-power devices get fewer particles, and `prefers-reduced-motion` is respected.
-- Impeller speed is a visual setting; it is not a model variable.
+## Deployment
+
+A fully static site (hash routing, relative asset paths). Every push to `main` is linted, built and published to GitHub Pages by [`deploy.yml`](.github/workflows/deploy.yml). Any static host also works: build with `npm run build` and serve `dist/`.
+
+`VITE_SITE_URL` in [`.env`](.env) sets the absolute URL of the social-preview image; change it if you host elsewhere.
 
 ## References
 
-Monod (1949) *Annu. Rev. Microbiol.* 3:371–394 · Luedeking & Piret (1959) *J. Biochem. Microbiol. Technol. Eng.* 1:393–412 · Shuler & Kargı, *Bioprocess Engineering: Basic Concepts* · Doran, *Bioprocess Engineering Principles*.
+Monod (1949) *Annu. Rev. Microbiol.* 3:371–394 · Luedeking & Piret (1959) *J. Biochem. Microbiol. Technol. Eng.* 1:393–412 · Shuler & Kargı, *Bioprocess Engineering: Basic Concepts* · Doran, *Bioprocess Engineering Principles*
