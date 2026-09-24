@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { ROUTES, hrefFor, navigate } from '../../hooks/useHashRoute'
 import type { Route } from '../../hooks/useHashRoute'
 import { LEARN_TOPICS } from '../../content/topics'
@@ -120,7 +120,7 @@ function NavLink({ id, label, active }: { id: Route; label: string; active: bool
 const menuItem =
   'flex w-full flex-col rounded-md px-3 py-2 text-left transition-colors hover:bg-aqua/10 focus-visible:bg-aqua/10'
 
-export default function Navbar({ route, onLaunchReactor, onRunPreset }: NavbarProps) {
+function Navbar({ route, onLaunchReactor, onRunPreset }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
@@ -274,3 +274,5 @@ export default function Navbar({ route, onLaunchReactor, onRunPreset }: NavbarPr
     </header>
   )
 }
+
+export default memo(Navbar)

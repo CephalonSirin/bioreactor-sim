@@ -240,12 +240,9 @@ export function useSimulationEngine(initialConfig: ReactorConfig, initialLabel: 
 
   const warnings = useMemo(() => configWarnings(state.config), [state.config])
 
-  const visiblePoints = useMemo(
-    () => state.chartPoints.slice(0, state.playbackIndex + 1),
-    [state.chartPoints, state.playbackIndex]
-  )
-
-  const currentPoint = visiblePoints[visiblePoints.length - 1] ?? null
+  // Read the playback point directly: slicing the trajectory on every tick
+  // would allocate a new array ~30 times a second for no consumer.
+  const currentPoint = state.chartPoints[state.playbackIndex] ?? null
   const progress = state.chartPoints.length > 1 ? state.playbackIndex / (state.chartPoints.length - 1) : 0
 
   return {
@@ -275,7 +272,6 @@ export function useSimulationEngine(initialConfig: ReactorConfig, initialLabel: 
     fullResult: state.fullResult,
     chartPoints: state.chartPoints,
     playbackIndex: state.playbackIndex,
-    visiblePoints,
     currentPoint,
     progress,
     running: state.running,

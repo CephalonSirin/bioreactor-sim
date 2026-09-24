@@ -265,7 +265,10 @@ function ReactorStage({ point, config, extents, playing, variant, leaving = fals
   const busRef = useRef<ReturnType<typeof createBus> | null>(null)
   if (!busRef.current) busRef.current = createBus(snap.targets, reduced)
   const bus = busRef.current
-  bus.target = snap.targets
+  if (bus.target !== snap.targets) {
+    bus.target = snap.targets
+    bus.settled = false // wake the frame pacer immediately (seek, new run)
+  }
   bus.playing = playing
   bus.reduced = reduced
   bus.leaving = leaving

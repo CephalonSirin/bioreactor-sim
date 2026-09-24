@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import ParameterSlider from './ParameterSlider'
 import { criticalDilutionRate } from '../../simulation/kinetics'
 import type { ReactorConfig } from '../../simulation/types'
@@ -36,7 +37,7 @@ function CriticalHint({ config }: { config: ReactorConfig }) {
   )
 }
 
-export default function ParameterPanel({ config, onChange, disabled }: ParameterPanelProps) {
+function ParameterPanel({ config, onChange, disabled }: ParameterPanelProps) {
   const update = (patch: Partial<ReactorConfig>) => onChange({ ...config, ...patch })
 
   return (
@@ -284,3 +285,6 @@ export default function ParameterPanel({ config, onChange, disabled }: Parameter
     </div>
   )
 }
+
+// Memoised: the Lab re-renders on every playback tick, this does not need to.
+export default memo(ParameterPanel)

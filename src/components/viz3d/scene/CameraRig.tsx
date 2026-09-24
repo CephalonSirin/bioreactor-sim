@@ -84,6 +84,7 @@ export function LabCamera({ mode, interactive, compact, entrance }: LabCameraPro
     const c = ref.current
     if (!c) return
     c.smoothTime = 0.5
+    idle.current = 0
     void c.setLookAt(...toXYZ({ ...home, distance: homeDist }, ty), 0, ty, 0, !bus.reduced)
   }, [mode, homeDist, home, bus, ty])
 
@@ -108,6 +109,7 @@ export function LabCamera({ mode, interactive, compact, entrance }: LabCameraPro
     }
     return () => {
       bus.camera = null
+      bus.cameraBusy = false
     }
   }, [bus, home, homeDist, ty])
 
@@ -127,11 +129,15 @@ export function LabCamera({ mode, interactive, compact, entrance }: LabCameraPro
     el.style.touchAction = interactive ? 'none' : 'pan-y'
     const arm = () => (c.mouseButtons.wheel = A.DOLLY)
     const disarm = () => (c.mouseButtons.wheel = A.NONE)
+    // Wheel zoom emits no 'controlstart'; count it as interaction too.
+    const onControl = () => (idle.current = Math.min(idle.current, 0))
     el.addEventListener('pointerdown', arm)
     el.addEventListener('pointerleave', disarm)
+    c.addEventListener('control', onControl)
     return () => {
       el.removeEventListener('pointerdown', arm)
       el.removeEventListener('pointerleave', disarm)
+      c.removeEventListener('control', onControl)
     }
   }, [gl, interactive])
 
@@ -139,6 +145,9 @@ export function LabCamera({ mode, interactive, compact, entrance }: LabCameraPro
     const c = ref.current
     if (!c) return
     idle.current += dt
+    // Interaction and transitions render at full rate; the idle drift is slow
+    // enough that the frame pacer can show it at its idle rate.
+    bus.cameraBusy = c.active && idle.current < 6
     if (bus.reduced || idle.current < 6) return
     // Gentle presentation drift, ping-ponging within ±0.45 rad of home.
     const off = c.azimuthAngle - home.azimuth

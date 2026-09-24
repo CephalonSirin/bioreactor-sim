@@ -1,6 +1,13 @@
 import { memo, useEffect, useRef } from 'react'
 import { fmt } from '../../lib/format'
 
+// One live query shared by every instance (they update ~30 times a second in playback).
+let motionQuery: MediaQueryList | null | undefined
+const reducedMotion = () => {
+  if (motionQuery === undefined) motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)') ?? null
+  return motionQuery?.matches ?? false
+}
+
 interface AnimatedNumberProps {
   value: number | null | undefined
   digits?: number
@@ -29,7 +36,7 @@ function AnimatedNumber({ value, digits = 2, duration = 260, className }: Animat
     const next = value !== null && value !== undefined && Number.isFinite(value) ? value : null
     target.current = next
 
-    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const reduce = reducedMotion()
     if (next === null || shown.current === null || reduce) {
       shown.current = next
       el.textContent = fmt(next, digits)

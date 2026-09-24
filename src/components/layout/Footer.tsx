@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { ROUTES, hrefFor } from '../../hooks/useHashRoute'
 
-export default function Footer() {
+function Footer() {
   return (
     <footer className="mt-24 border-t border-ink-600/70">
       <div className="mx-auto flex max-w-[1560px] flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-start md:justify-between">
@@ -26,3 +27,5 @@ export default function Footer() {
     </footer>
   )
 }
+
+export default memo(Footer)

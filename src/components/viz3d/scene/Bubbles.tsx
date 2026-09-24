@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { BUBBLE_FRAG, BUBBLE_VERT } from '../glsl'
-import { rng, useScene } from '../sceneContext'
+import { particleSphere, rng, useScene, visibleCount } from '../sceneContext'
 import { IMP_LOW, SPARGE_R, SPARGE_Y } from '../dims'
 
 /**
@@ -24,7 +24,7 @@ function Bubbles({ visible }: { visible: boolean }) {
       A.set([r(), r() * Math.PI * 2, r(), (i + r()) / count], i * 4)
       B.set([0.5 + r(), r(), Math.sqrt(r()), r()], i * 4)
     }
-    const geo = new THREE.InstancedBufferGeometry().copy(new THREE.IcosahedronGeometry(1, 2) as unknown as THREE.InstancedBufferGeometry)
+    const geo = particleSphere(tier === 'high' ? 2 : 1)
     geo.setAttribute('aA', new THREE.InstancedBufferAttribute(A, 4))
     geo.setAttribute('aB', new THREE.InstancedBufferAttribute(B, 4))
     geo.instanceCount = count
@@ -49,7 +49,7 @@ function Bubbles({ visible }: { visible: boolean }) {
       depthWrite: false,
     })
     return { geo, mat }
-  }, [count, shared])
+  }, [count, shared, tier])
 
   useEffect(
     () => () => {
@@ -64,7 +64,9 @@ function Bubbles({ visible }: { visible: boolean }) {
     // Bubbles use the process clock: frozen when paused, like everything else.
     u.uTime.value = bus.clock
     // Constant aeration plus metabolic gas evolution.
-    u.uIntensity.value = visible ? 0.3 + 0.7 * bus.live.gas : 0
+    const intensity = visible ? 0.3 + 0.7 * bus.live.gas : 0
+    u.uIntensity.value = intensity
+    res.geo.instanceCount = visibleCount(count, intensity)
     u.uSigma.value = (0.22 + 3.6 * bus.live.turbidity) * 0.35
   })
 

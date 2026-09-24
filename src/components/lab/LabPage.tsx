@@ -38,40 +38,56 @@ export default function LabPage({ engine, presenting, onPresentingChange }: LabP
   const shownConfig = runConfig ?? config
   const duration = engine.chartPoints.length ? engine.chartPoints[engine.chartPoints.length - 1].t : config.settings.duration
 
-  const handleReactor = (type: ReactorType) => engine.load(defaultConfigFor(type), `${MODE_NAME[type]} · default`)
-  const handlePreset = (p: Preset) => engine.loadAndRun(p.build(), p.label)
+  // Handlers are kept referentially stable so the memoised panels below
+  // skip the ~30 re-renders per second that playback drives through here.
+  const { load, loadAndRun, fullResult, runLabel, metrics: runMetrics } = engine
+  const handleReactor = useCallback((type: ReactorType) => load(defaultConfigFor(type), `${MODE_NAME[type]} · default`), [load])
+  const handlePreset = useCallback((p: Preset) => loadAndRun(p.build(), p.label), [loadAndRun])
 
-  const baseName = engine.fullResult ? exportFilename(engine.runLabel, engine.fullResult.config.settings.duration, '') : ''
+  const baseName = fullResult ? exportFilename(runLabel, fullResult.config.settings.duration, '') : ''
   const fileBase = baseName.replace(/\.$/, '')
 
-  const guard = (fn: () => void | Promise<void>) => async () => {
+  const guard = useCallback(async (fn: () => void | Promise<void>) => {
     try {
       setExportError(null)
       await fn()
     } catch (e) {
       setExportError(e instanceof Error ? e.message : 'Export failed.')
     }
-  }
+  }, [])
 
-  const handleCsv = guard(() => {
-    if (!engine.fullResult) return
-    downloadCsv(exportFilename(engine.runLabel, engine.fullResult.config.settings.duration, 'csv'), trajectoryToCsv(engine.fullResult))
-  })
-  const handleJson = guard(() => {
-    if (!engine.fullResult) return
-    downloadJson(
-      exportFilename(engine.runLabel, engine.fullResult.config.settings.duration, 'json'),
-      experimentToJson(engine.fullResult, engine.metrics, engine.runLabel)
-    )
-  })
-  const handleImage = guard(async () => {
-    const t = currentPoint ? `t = ${currentPoint.t.toFixed(1)} h` : 'initial state'
-    const name = `${fileBase || 'bioreactor'}_reactor.png`
-    const caption = `${engine.runLabel} · ${t} · Bioreactor Lab (educational model)`
-    const frame = captureRef.current?.()
-    if (frame) await downloadCanvasAsPng(frame, name, { caption })
-    else if (svgRef.current) await downloadSvgAsPng(svgRef.current, name, { caption })
-  })
+  const handleCsv = useCallback(
+    () =>
+      guard(() => {
+        if (!fullResult) return
+        downloadCsv(exportFilename(runLabel, fullResult.config.settings.duration, 'csv'), trajectoryToCsv(fullResult))
+      }),
+    [guard, fullResult, runLabel]
+  )
+  const handleJson = useCallback(
+    () =>
+      guard(() => {
+        if (!fullResult) return
+        downloadJson(exportFilename(runLabel, fullResult.config.settings.duration, 'json'), experimentToJson(fullResult, runMetrics, runLabel))
+      }),
+    [guard, fullResult, runMetrics, runLabel]
+  )
+  // The playback point changes every tick; read it through a ref at click time.
+  const pointRef = useRef(currentPoint)
+  pointRef.current = currentPoint
+  const handleImage = useCallback(
+    () =>
+      guard(async () => {
+        const p = pointRef.current
+        const t = p ? `t = ${p.t.toFixed(1)} h` : 'initial state'
+        const name = `${fileBase || 'bioreactor'}_reactor.png`
+        const caption = `${runLabel} · ${t} · Bioreactor Lab (educational model)`
+        const frame = captureRef.current?.()
+        if (frame) await downloadCanvasAsPng(frame, name, { caption })
+        else if (svgRef.current) await downloadSvgAsPng(svgRef.current, name, { caption })
+      }),
+    [guard, fileBase, runLabel]
+  )
 
   // Keyboard: Space = play/pause, R = run, P = presentation mode, Esc = exit.
   const { isPlaying, hasResult, play, pause, run } = engine

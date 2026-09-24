@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import ReactorGlyph from '../viz/ReactorGlyph'
 import type { ReactorType } from '../../simulation/types'
 
@@ -13,7 +14,7 @@ const OPTIONS: { type: ReactorType; name: string; tagline: string; detail: strin
   { type: 'cstr', name: 'CSTR', tagline: 'Feed in, culture out', detail: 'Continuous stirred-tank: inflow equals outflow, volume constant. Steady state or washout.' },
 ]
 
-export default function ReactorSelector({ value, onChange, compact = false }: ReactorSelectorProps) {
+function ReactorSelector({ value, onChange, compact = false }: ReactorSelectorProps) {
   return (
     <div role="group" aria-label="Reactor mode" className="grid grid-cols-3 gap-2 sm:gap-3">
       {OPTIONS.map((o) => {
@@ -44,3 +45,5 @@ export default function ReactorSelector({ value, onChange, compact = false }: Re
     </div>
   )
 }
+
+export default memo(ReactorSelector)

@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { PRESETS, PRESETS_BY_REACTOR } from '../../simulation/presets'
 import type { Preset } from '../../simulation/presets'
 import type { ReactorType } from '../../simulation/types'
@@ -14,7 +15,7 @@ interface PresetChipsProps {
   title?: string
 }
 
-export default function PresetChips({ reactorType, activeLabel, modified, onSelect, all = false, title = 'Experiments' }: PresetChipsProps) {
+function PresetChips({ reactorType, activeLabel, modified, onSelect, all = false, title = 'Experiments' }: PresetChipsProps) {
   const list = all ? PRESETS : PRESETS_BY_REACTOR(reactorType)
   return (
     <div className="glass p-4">
@@ -46,3 +47,5 @@ export default function PresetChips({ reactorType, activeLabel, modified, onSele
     </div>
   )
 }
+
+export default memo(PresetChips)

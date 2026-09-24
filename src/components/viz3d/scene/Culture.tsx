@@ -2,7 +2,7 @@ import { memo, useEffect, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { CELL_FRAG, CELL_VERT, GLOW_FRAG, POINTS_VERT, RING_FRAG } from '../glsl'
-import { particleSeeds, useScene } from '../sceneContext'
+import { particleSeeds, particleSphere, useScene, visibleCount } from '../sceneContext'
 import { IMP_LOW } from '../dims'
 import type { Layers } from '../bus'
 
@@ -34,7 +34,7 @@ function Culture({ layers }: { layers: Layers }) {
 
     // Biomass: instanced rod-shaped (bacillus-like) ellipsoids, lit.
     const cellSeeds = particleSeeds(n.cells, 11)
-    const cellGeo = new THREE.InstancedBufferGeometry().copy(new THREE.IcosahedronGeometry(1, tier === 'high' ? 1 : 0) as unknown as THREE.InstancedBufferGeometry)
+    const cellGeo = particleSphere(tier === 'high' ? 1 : 0)
     cellGeo.setAttribute('aA', new THREE.InstancedBufferAttribute(cellSeeds.A, 4))
     cellGeo.setAttribute('aB', new THREE.InstancedBufferAttribute(cellSeeds.B, 4))
     cellGeo.instanceCount = n.cells
@@ -103,15 +103,23 @@ function Culture({ layers }: { layers: Layers }) {
     // Particles are seen through less culture than the bulk colour implies:
     // a softer extinction keeps the nearest cells legible in dense broth.
     const sigma = (0.22 + 3.6 * live.turbidity) * 0.6
+    const cells = layers.biomass ? live.cells : 0
+    const substrate = layers.substrate ? live.substrate : 0
+    const product = layers.product ? live.product * 0.9 : 0
     const cu = res.cellMat.uniforms
-    cu.uDensity.value = layers.biomass ? live.cells : 0
+    cu.uDensity.value = cells
     cu.uSigma.value = sigma
-    for (const f of [res.substrate, res.product]) {
-      f.m.uniforms.uSigma.value = sigma * 1.1
-      f.m.uniforms.uPR.value = pr
-    }
-    res.substrate.m.uniforms.uDensity.value = layers.substrate ? live.substrate : 0
-    res.product.m.uniforms.uDensity.value = layers.product ? live.product * 0.9 : 0
+    res.cellGeo.instanceCount = visibleCount(n.cells, cells)
+    const su = res.substrate.m.uniforms
+    su.uDensity.value = substrate
+    su.uSigma.value = sigma * 1.1
+    su.uPR.value = pr
+    res.substrate.g.setDrawRange(0, visibleCount(n.substrate, substrate))
+    const pu = res.product.m.uniforms
+    pu.uDensity.value = product
+    pu.uSigma.value = sigma * 1.1
+    pu.uPR.value = pr
+    res.product.g.setDrawRange(0, visibleCount(n.product, product))
   })
 
   return (

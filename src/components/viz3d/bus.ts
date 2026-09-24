@@ -48,6 +48,10 @@ export interface ReactorBus {
   reduced: boolean
   /** Snap to the target on the next frame (seek / new run). */
   snap: boolean
+  /** Set by the director once `live` has converged on `target`. */
+  settled: boolean
+  /** Set by the camera rig while the view is moving for a reason other than idle drift. */
+  cameraBusy: boolean
   camera: CameraApi | null
   /** Hero only: set when the user heads into the Lab. */
   leaving: boolean
@@ -69,6 +73,8 @@ export function createBus(target: VisualTargets, reduced: boolean): ReactorBus {
     spin: 0,
     reduced,
     snap: true,
+    settled: false,
+    cameraBusy: false,
     camera: null,
     leaving: false,
     pointer: { x: 0, y: 0 },

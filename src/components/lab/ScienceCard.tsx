@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { EquationBlock } from '../ui/Eq'
 import { renderMath } from '../ui/mathText'
 import { MASS_BALANCES, RATE_LAWS } from '../../content/equations'
@@ -12,7 +13,7 @@ interface ScienceCardProps {
 }
 
 /** Explains the loaded experiment and shows the equations the run is using. */
-export default function ScienceCard({ reactorType, label, modified }: ScienceCardProps) {
+function ScienceCard({ reactorType, label, modified }: ScienceCardProps) {
   const preset = PRESETS.find((p) => p.label === label && p.reactorType === reactorType)
   const set = MASS_BALANCES[reactorType]
   return (
@@ -55,3 +56,5 @@ export default function ScienceCard({ reactorType, label, modified }: ScienceCar
     </section>
   )
 }
+
+export default memo(ScienceCard)

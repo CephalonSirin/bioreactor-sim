@@ -37,9 +37,19 @@ export default function Director() {
     const kLevel = bus.snap ? 1 : 1 - Math.exp(-dt * 5)
     bus.snap = false
 
-    for (const key of KEYS) live[key] += (target[key] - live[key]) * k
+    let gap = 0
+    for (const key of KEYS) {
+      live[key] += (target[key] - live[key]) * k
+      gap = Math.max(gap, Math.abs(target[key] - live[key]))
+    }
     live.level += (target.level - live.level) * kLevel
-    for (let i = 0; i < 3; i++) live.color[i] += (target.color[i] - live.color[i]) * k
+    gap = Math.max(gap, Math.abs(target.level - live.level))
+    for (let i = 0; i < 3; i++) {
+      live.color[i] += (target.color[i] - live.color[i]) * k
+      gap = Math.max(gap, Math.abs(target.color[i] - live.color[i]))
+    }
+    // All targets are 0..1 scaled; below this the remaining easing is invisible.
+    bus.settled = gap < 1e-3
 
     const goal = bus.playing ? 1 : 0
     bus.motion += (goal - bus.motion) * (1 - Math.exp(-dt * (bus.playing ? 2.6 : 1.8)))

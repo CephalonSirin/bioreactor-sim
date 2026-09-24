@@ -18,10 +18,19 @@ body,
 
 body {
   @apply bg-ink-950 font-sans text-paper antialiased;
+}
+
+/* Viewport-fixed ambient glow. A fixed layer rather than
+   background-attachment: fixed, which repaints the page on every scroll. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
   background-image:
     radial-gradient(1100px 520px at 78% -8%, rgba(70, 224, 200, 0.09), transparent 60%),
     radial-gradient(900px 520px at 4% 30%, rgba(240, 181, 69, 0.05), transparent 60%);
-  background-attachment: fixed;
 }
 
 /* Faint laboratory graph-paper grid behind everything */
@@ -62,8 +71,9 @@ h3 {
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.04) inset,
     0 14px 40px -16px rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* No backdrop blur: cards sit on the static page background, where it is
+     invisible but costs a blur pass per card on every scroll frame. Surfaces
+     over moving content (HUD, navbar) keep theirs. */
 }
 
 .well {

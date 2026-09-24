@@ -213,10 +213,11 @@ function FeedLine({ flow }: { flow: boolean }) {
   }, [res])
 
   const nozzleY = Y_TOP - 0.14
+  const tubes = [supply, delivery] // built per render, not per frame
   useFrame(() => {
     const feed = bus.live.feed
     const active = flow && bus.motion > 0.02
-    for (const t of [supply, delivery]) {
+    for (const t of tubes) {
       t.mat.uniforms.uTime.value = bus.clock
       t.mat.uniforms.uFlow.value = feed
       t.mat.uniforms.uShow.value = flow ? 1 : 0
