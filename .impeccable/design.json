@@ -1,0 +1,667 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-24T05:16:31.000Z",
+  "title": "Design System: Bioreactor Lab",
+  "extensions": {
+    "colorMeta": {
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Bench",
+        "canonical": "#F6F6F4",
+        "tonalRamp": [
+          "#0B0B0A",
+          "#242423",
+          "#40403E",
+          "#5E5E5C",
+          "#80807E",
+          "#A5A5A3",
+          "#CACAC9",
+          "#EEEEEE"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Sheet White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#242424",
+          "#404040",
+          "#5D5D5D",
+          "#808080",
+          "#A4A4A4",
+          "#CACACA",
+          "#EEEEEE"
+        ]
+      },
+      "sunken": {
+        "role": "neutral",
+        "displayName": "Sunken",
+        "canonical": "#EFEFEC",
+        "tonalRamp": [
+          "#0B0B09",
+          "#242422",
+          "#40403D",
+          "#5E5E5B",
+          "#80807E",
+          "#A5A5A2",
+          "#CBCBC8",
+          "#EEEEED"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#E3E3DF",
+        "tonalRamp": [
+          "#0B0B09",
+          "#242421",
+          "#40403D",
+          "#5E5E5A",
+          "#80807D",
+          "#A5A5A1",
+          "#CBCBC7",
+          "#EEEEED"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Strong Hairline",
+        "canonical": "#CBCBC5",
+        "tonalRamp": [
+          "#0B0B08",
+          "#242420",
+          "#40403B",
+          "#5E5E59",
+          "#81817B",
+          "#A5A59F",
+          "#CBCBC5",
+          "#EEEEEC"
+        ]
+      },
+      "ink": {
+        "role": "primary",
+        "displayName": "Charcoal Ink",
+        "canonical": "#17191C",
+        "tonalRamp": [
+          "#090B0E",
+          "#222427",
+          "#3E4043",
+          "#5B5E61",
+          "#7E8084",
+          "#A2A5A9",
+          "#C8CBCF",
+          "#EDEEF0"
+        ]
+      },
+      "ink-hover": {
+        "role": "primary",
+        "displayName": "Charcoal Ink Hover",
+        "canonical": "#2B2E33",
+        "tonalRamp": [
+          "#090B0F",
+          "#212429",
+          "#3D4045",
+          "#5A5E63",
+          "#7D8086",
+          "#A1A5AB",
+          "#C7CBD1",
+          "#EDEEF1"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Ink 2",
+        "canonical": "#4A4F55",
+        "tonalRamp": [
+          "#080B10",
+          "#20242A",
+          "#3B4046",
+          "#595E64",
+          "#7B8187",
+          "#9FA5AC",
+          "#C5CBD2",
+          "#ECEFF1"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Ink 3",
+        "canonical": "#6B7077",
+        "tonalRamp": [
+          "#080B10",
+          "#20242A",
+          "#3C4046",
+          "#595E65",
+          "#7B8188",
+          "#A0A5AD",
+          "#C5CBD3",
+          "#EDEFF1"
+        ]
+      },
+      "ink-4": {
+        "role": "neutral",
+        "displayName": "Ink 4",
+        "canonical": "#9A9EA3",
+        "tonalRamp": [
+          "#090B0F",
+          "#212428",
+          "#3D4044",
+          "#5A5E62",
+          "#7D8185",
+          "#A1A5AA",
+          "#C7CBD0",
+          "#EDEEF0"
+        ]
+      },
+      "accent": {
+        "role": "secondary",
+        "displayName": "Bench Teal",
+        "canonical": "#0E6B63",
+        "tonalRamp": [
+          "#000F0D",
+          "#002B27",
+          "#024A44",
+          "#106C64",
+          "#3F9087",
+          "#66B5AC",
+          "#8CDCD2",
+          "#DBF5F1"
+        ]
+      },
+      "accent-hover": {
+        "role": "secondary",
+        "displayName": "Bench Teal Deep",
+        "canonical": "#0A5750",
+        "tonalRamp": [
+          "#000F0D",
+          "#012B27",
+          "#004B44",
+          "#266A63",
+          "#4C8E86",
+          "#71B3AA",
+          "#96DAD0",
+          "#DDF4F1"
+        ]
+      },
+      "accent-soft": {
+        "role": "secondary",
+        "displayName": "Teal Wash",
+        "canonical": "#E4F0EE",
+        "tonalRamp": [
+          "#050D0C",
+          "#1D2625",
+          "#384241",
+          "#56605E",
+          "#788381",
+          "#9CA7A5",
+          "#C2CDCB",
+          "#EBEFEF"
+        ]
+      },
+      "accent-line": {
+        "role": "secondary",
+        "displayName": "Teal Underline",
+        "canonical": "#9CC7C1",
+        "tonalRamp": [
+          "#000F0D",
+          "#002B27",
+          "#1F4843",
+          "#3E6661",
+          "#608A84",
+          "#84AEA9",
+          "#A9D5CF",
+          "#E3F2F0"
+        ]
+      },
+      "series-biomass": {
+        "role": "data",
+        "displayName": "Biomass Ochre (X)",
+        "canonical": "#C18A12",
+        "tonalRamp": [
+          "#130900",
+          "#322000",
+          "#553A00",
+          "#7B5601",
+          "#A77605",
+          "#D1992D",
+          "#F9C05A",
+          "#FEECCF"
+        ]
+      },
+      "series-substrate": {
+        "role": "data",
+        "displayName": "Substrate Blue (S)",
+        "canonical": "#1F6FA8",
+        "tonalRamp": [
+          "#000C1C",
+          "#002642",
+          "#00436D",
+          "#0A629A",
+          "#3A86C1",
+          "#61ACE9",
+          "#9CD1FF",
+          "#E1F1FF"
+        ]
+      },
+      "series-product": {
+        "role": "data",
+        "displayName": "Product Berry (P)",
+        "canonical": "#B23A5A",
+        "tonalRamp": [
+          "#1F0006",
+          "#4A001A",
+          "#7A0030",
+          "#A1294C",
+          "#CA506E",
+          "#F47692",
+          "#FFB2BF",
+          "#FEE8EB"
+        ]
+      },
+      "series-growth-rate": {
+        "role": "data",
+        "displayName": "Growth Green (mu)",
+        "canonical": "#3B8A3E",
+        "tonalRamp": [
+          "#001100",
+          "#002E03",
+          "#004F0B",
+          "#1E7024",
+          "#469548",
+          "#6BBA6C",
+          "#91E291",
+          "#DCF7DB"
+        ]
+      },
+      "series-volume": {
+        "role": "data",
+        "displayName": "Volume Violet (V)",
+        "canonical": "#6A5AB5",
+        "tonalRamp": [
+          "#0E002E",
+          "#270661",
+          "#412C83",
+          "#5D4CA6",
+          "#7F70CD",
+          "#A295F6",
+          "#C8C2FF",
+          "#EDECFF"
+        ]
+      },
+      "warn": {
+        "role": "status",
+        "displayName": "Warn Umber",
+        "canonical": "#8F5200",
+        "tonalRamp": [
+          "#170700",
+          "#381C00",
+          "#5E3401",
+          "#884D00",
+          "#AF702E",
+          "#D79454",
+          "#FFBA7A",
+          "#FFEAD9"
+        ]
+      },
+      "warn-soft": {
+        "role": "status",
+        "displayName": "Warn Wash",
+        "canonical": "#FBF1E0",
+        "tonalRamp": [
+          "#100A02",
+          "#2A2316",
+          "#473F31",
+          "#655C4E",
+          "#887F70",
+          "#ADA393",
+          "#D3C9B9",
+          "#F1EEE8"
+        ]
+      },
+      "danger": {
+        "role": "status",
+        "displayName": "Alarm Red",
+        "canonical": "#B42318",
+        "tonalRamp": [
+          "#210000",
+          "#4C0000",
+          "#7D0000",
+          "#AD1A10",
+          "#D74839",
+          "#FF7361",
+          "#FFB5A9",
+          "#FEE9E5"
+        ]
+      },
+      "danger-soft": {
+        "role": "status",
+        "displayName": "Alarm Wash",
+        "canonical": "#FDEDEB",
+        "tonalRamp": [
+          "#120807",
+          "#2C2120",
+          "#493C3B",
+          "#675A58",
+          "#8B7C7B",
+          "#AFA19F",
+          "#D6C6C4",
+          "#F3EDEC"
+        ]
+      },
+      "ok": {
+        "role": "status",
+        "displayName": "Settled Green",
+        "canonical": "#1D6B45",
+        "tonalRamp": [
+          "#001005",
+          "#002D18",
+          "#004D2D",
+          "#216E48",
+          "#489269",
+          "#6DB78D",
+          "#93DEB2",
+          "#DDF6E6"
+        ]
+      },
+      "ok-soft": {
+        "role": "status",
+        "displayName": "Settled Wash",
+        "canonical": "#E6F2EB",
+        "tonalRamp": [
+          "#060D09",
+          "#1E2621",
+          "#39423D",
+          "#56605B",
+          "#78837D",
+          "#9DA8A1",
+          "#C2CEC7",
+          "#EBF0ED"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Home hero headline only."
+      },
+      "headline": {
+        "displayName": "Page Title",
+        "purpose": "Titles of Experiments, Learn and Methodology."
+      },
+      "title": {
+        "displayName": "Section",
+        "purpose": "Section headings on reading pages."
+      },
+      "subtitle": {
+        "displayName": "Sub",
+        "purpose": "Panel, card and Lab section headings."
+      },
+      "lede": {
+        "displayName": "Lede",
+        "purpose": "The single intro paragraph under a headline, ink-2."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Prose, max 68ch."
+      },
+      "ui": {
+        "displayName": "UI",
+        "purpose": "Buttons, nav, menus, table cells."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field names, panel labels, captions, table headers; sentence case, ink-3."
+      },
+      "measurement": {
+        "displayName": "Measurement",
+        "purpose": "Field values and readouts, tabular figures."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "Figure and equation numbers, timestamps."
+      },
+      "math": {
+        "displayName": "Math",
+        "purpose": "Symbols and display equations, italic with ssty."
+      }
+    },
+    "shadows": [
+      {
+        "name": "pop",
+        "value": "0 1px 2px rgba(23,25,28,0.05), 0 10px 28px -8px rgba(23,25,28,0.16)",
+        "purpose": "Menus, popovers, tooltips, chart hover readouts, floating compare bar."
+      },
+      {
+        "name": "lift",
+        "value": "0 1px 2px rgba(23,25,28,0.06), 0 2px 8px -2px rgba(23,25,28,0.08)",
+        "purpose": "Toolbars and notices overlaid on the 3D stage."
+      },
+      {
+        "name": "seg-pill",
+        "value": "0 0 0 1px rgba(23,25,28,0.06), 0 1px 2px rgba(23,25,28,0.08)",
+        "purpose": "Selected pill in segmented controls."
+      },
+      {
+        "name": "key-cap",
+        "value": "0 1px 0 #CBCBC5",
+        "purpose": "Keyboard hints."
+      },
+      {
+        "name": "focus-field",
+        "value": "0 0 0 3px rgba(14,107,99,0.14)",
+        "purpose": "Numeric field focus ring."
+      },
+      {
+        "name": "invalid-field",
+        "value": "0 0 0 3px rgba(180,35,24,0.12)",
+        "purpose": "Numeric field invalid ring."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-smooth-out",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Default easing for every transition and entrance."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "cubic-bezier(0.65, 0, 0.35, 1)",
+        "purpose": "Symmetric movement."
+      },
+      {
+        "name": "duration-micro",
+        "value": "80ms",
+        "purpose": "Instant feedback."
+      },
+      {
+        "name": "duration-quick",
+        "value": "150ms",
+        "purpose": "Colour and border hovers; dropdown close."
+      },
+      {
+        "name": "duration-fast",
+        "value": "250ms",
+        "purpose": "Segmented pill, accordion, dropdown open, pop-in."
+      },
+      {
+        "name": "duration-medium",
+        "value": "350ms",
+        "purpose": "Larger state changes."
+      },
+      {
+        "name": "route-in",
+        "value": "320ms, 6px rise",
+        "purpose": "Route entrance; view transition 140ms out / 260ms in."
+      },
+      {
+        "name": "reveal",
+        "value": "600ms, 14px rise",
+        "purpose": "Scroll reveal; content stays visible without JS."
+      },
+      {
+        "name": "press",
+        "value": "scale(0.97), 160ms",
+        "purpose": "Button active state; icon buttons scale(0.94)."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "page-max",
+        "value": "1440px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Charcoal action for main navigation and page actions.",
+      "html": "<button class=\"ds-btn-primary\">Open the Lab <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:6px;border:1px solid #17191C;background:#17191C;color:#fff;font:500 13px/18px 'Schibsted Grotesk',system-ui,sans-serif;cursor:pointer;transition:background-color 150ms ease,transform 160ms cubic-bezier(0.22,1,0.36,1)}.ds-btn-primary svg{width:15px;height:15px}.ds-btn-primary:hover{background:#2B2E33}.ds-btn-primary:active{transform:scale(0.97)}.ds-btn-primary:focus-visible{outline:2px solid #0E6B63;outline-offset:2px}"
+    },
+    {
+      "name": "Run Button",
+      "kind": "button",
+      "refersTo": "button-accent",
+      "description": "Teal; reserved for the simulation Run action.",
+      "html": "<button class=\"ds-btn-run\"><svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M7 4v16l13-8z\"/></svg>Run</button>",
+      "css": ".ds-btn-run{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:6px;border:1px solid #0E6B63;background:#0E6B63;color:#fff;font:500 13px/18px 'Schibsted Grotesk',system-ui,sans-serif;cursor:pointer;transition:background-color 150ms ease,transform 160ms cubic-bezier(0.22,1,0.36,1)}.ds-btn-run svg{width:15px;height:15px}.ds-btn-run:hover{background:#0A5750;border-color:#0A5750}.ds-btn-run:active{transform:scale(0.97)}.ds-btn-run:focus-visible{outline:2px solid #0E6B63;outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "White with strong hairline; toolbar actions such as Save as baseline and Export.",
+      "html": "<button class=\"ds-btn-secondary\">Save as baseline</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;height:34px;padding:0 14px;border-radius:6px;border:1px solid #CBCBC5;background:#fff;color:#17191C;box-shadow:0 1px 1px rgba(23,25,28,0.04);font:500 13px/18px 'Schibsted Grotesk',system-ui,sans-serif;cursor:pointer;transition:background-color 150ms ease,border-color 150ms ease,transform 160ms cubic-bezier(0.22,1,0.36,1)}.ds-btn-secondary:hover{border-color:#9A9EA3;background:#FAFAF8}.ds-btn-secondary:active{transform:scale(0.97)}.ds-btn-secondary:focus-visible{outline:2px solid #0E6B63;outline-offset:2px}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Transparent tertiary action.",
+      "html": "<button class=\"ds-btn-ghost\">How the model works</button>",
+      "css": ".ds-btn-ghost{display:inline-flex;align-items:center;height:34px;padding:0 14px;border-radius:6px;border:1px solid transparent;background:transparent;color:#4A4F55;font:500 13px/18px 'Schibsted Grotesk',system-ui,sans-serif;cursor:pointer;transition:background-color 150ms ease,color 150ms ease}.ds-btn-ghost:hover{background:#EFEFEC;color:#17191C}.ds-btn-ghost:focus-visible{outline:2px solid #0E6B63;outline-offset:2px}"
+    },
+    {
+      "name": "Numeric Field",
+      "kind": "input",
+      "refersTo": "field-numeric",
+      "description": "Instrument-style parameter entry with the unit beside it.",
+      "html": "<label class=\"ds-param\"><span class=\"ds-param-label\">Substrate <i>S</i><sub>0</sub></span><input class=\"ds-field\" value=\"10.0\"><span class=\"ds-unit\">g/L</span></label>",
+      "css": ".ds-param{display:flex;align-items:center;gap:8px;width:240px;font:500 12px/16px 'Schibsted Grotesk',system-ui,sans-serif;color:#4A4F55}.ds-param-label{flex:1}.ds-param-label i{font-family:'STIX Two Text',Cambria,serif}.ds-field{height:28px;width:4.75rem;padding:0 8px;border-radius:4px;border:1px solid #CBCBC5;background:#fff;color:#17191C;text-align:right;font:400 13px/18px 'Red Hat Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;transition:border-color 150ms ease,box-shadow 150ms ease}.ds-field:hover{border-color:#9A9EA3}.ds-field:focus{outline:none;border-color:#0E6B63;box-shadow:0 0 0 3px rgba(14,107,99,0.14)}.ds-unit{width:32px;font:400 11px/14px 'Red Hat Mono',ui-monospace,monospace;color:#6B7077}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "chip",
+      "refersTo": "segmented",
+      "description": "Sunken track with a sliding white pill; mode, speed and view toggles.",
+      "html": "<div class=\"ds-seg\"><button class=\"ds-seg-item\">1x</button><button class=\"ds-seg-item\">2x</button><button class=\"ds-seg-item is-on\">4x</button><button class=\"ds-seg-item\">8x</button></div>",
+      "css": ".ds-seg{display:inline-flex;gap:2px;padding:3px;border-radius:6px;border:1px solid #E3E3DF;background:#EFEFEC}.ds-seg-item{height:28px;padding:0 12px;border:0;border-radius:4px;background:transparent;color:#6B7077;font:500 13px/18px 'Schibsted Grotesk',system-ui,sans-serif;cursor:pointer;transition:color 250ms cubic-bezier(0.22,1,0.36,1),background-color 250ms cubic-bezier(0.22,1,0.36,1)}.ds-seg-item:hover{color:#17191C}.ds-seg-item.is-on{background:#fff;color:#17191C;box-shadow:0 0 0 1px rgba(23,25,28,0.06),0 1px 2px rgba(23,25,28,0.08)}.ds-seg-item:focus-visible{outline:2px solid #0E6B63;outline-offset:2px}"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Sticky bar with centred links and a 1.5px ink underline under the active route.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-nav-brand\">Bioreactor Lab</span><div class=\"ds-nav-links\"><a class=\"is-active\">Lab</a><a>Experiments</a><a>Learn</a><a>Methodology</a></div><a class=\"ds-nav-cta\">Open the Lab</a></nav>",
+      "css": ".ds-nav{display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 24px;background:#F6F6F4;border-bottom:1px solid #E3E3DF;font-family:'Schibsted Grotesk',system-ui,sans-serif}.ds-nav-brand{font-weight:600;font-size:15px;letter-spacing:-0.01em;color:#17191C}.ds-nav-links{display:flex;gap:4px;height:100%}.ds-nav-links a{position:relative;display:flex;align-items:center;padding:0 12px;font-size:13px;font-weight:500;color:#6B7077;cursor:pointer;transition:color 150ms ease}.ds-nav-links a:hover,.ds-nav-links a.is-active{color:#17191C}.ds-nav-links a.is-active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1.5px;background:#17191C}.ds-nav-cta{height:28px;padding:0 10px;display:inline-flex;align-items:center;border-radius:6px;background:#17191C;color:#fff;font-size:12px;font-weight:500}"
+    },
+    {
+      "name": "Readout Row",
+      "kind": "custom",
+      "refersTo": "sheet",
+      "description": "Observe list row: series key, label with symbol, tabular mono value and unit.",
+      "html": "<div class=\"ds-readout\"><span class=\"ds-key\" style=\"color:#C18A12\"></span><span class=\"ds-rlabel\">Biomass <i>X</i></span><span class=\"ds-rval\">3.511<small>g/L</small></span></div>",
+      "css": ".ds-readout{display:flex;align-items:center;gap:10px;width:260px;padding:10px 0;border-bottom:1px solid #E3E3DF;font-family:'Schibsted Grotesk',system-ui,sans-serif}.ds-key{width:14px;height:2px;border-radius:2px;background:currentColor}.ds-rlabel{flex:1;font-size:12px;font-weight:500;color:#4A4F55}.ds-rlabel i{font-family:'STIX Two Text',Cambria,serif}.ds-rval{font:400 20px/1 'Red Hat Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;color:#17191C}.ds-rval small{margin-left:4px;font-size:11px;color:#6B7077}"
+    },
+    {
+      "name": "Menu",
+      "kind": "card",
+      "refersTo": "menu",
+      "description": "Floating menu with the Pop shadow; dropdowns and pickers.",
+      "html": "<div class=\"ds-menu\"><button class=\"ds-menu-item\">Export CSV</button><button class=\"ds-menu-item\">Export figure (SVG)</button><button class=\"ds-menu-item\">Copy share link</button></div>",
+      "css": ".ds-menu{width:220px;padding:4px;border-radius:8px;border:1px solid #E3E3DF;background:#fff;box-shadow:0 1px 2px rgba(23,25,28,0.05),0 10px 28px -8px rgba(23,25,28,0.16)}.ds-menu-item{display:flex;width:100%;padding:8px 10px;border:0;border-radius:6px;background:transparent;text-align:left;color:#17191C;font:400 13px/18px 'Schibsted Grotesk',system-ui,sans-serif;cursor:pointer;transition:background-color 100ms ease}.ds-menu-item:hover,.ds-menu-item:focus-visible{background:#EFEFEC;outline:none}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Research Bench",
+    "overview": "Contemporary research software played straight. A neutral light bench (warm off-white ground, white sheets, hairline rules) holds a live instrument: the 3D vessel, numeric readouts set in a monospace, and journal-style figures. Charcoal ink does the structural work, carrying text, primary actions and selected states; a single restrained teal is reserved for the Run action, links, focus rings and the caret. Colour otherwise belongs to data: each simulated quantity owns one validated hue everywhere it appears.\n\nDensity is that of a working tool, not a brochure. The UI is set in 13px and 12px grotesk with tabular mono numbers; headlines are large, tight-tracked and semibold, and there are few of them. Structure comes from hairlines and alignment rather than boxed cards and shadows; elevation is reserved for things that float over content. Mathematics is typeset like a paper, in STIX Two italic with equation numbers in the margin.\n\nThe world explicitly refuses the dark neon HUD dashboard it replaced: no glow, no glass panels, no gradients, no dark mode.",
+    "keyCharacteristics": [
+      "Light neutral bench (#F6F6F4) with white sheets and 1px hairlines",
+      "Charcoal ink as the primary action and selection colour; teal used sparingly",
+      "One fixed colour per simulated quantity (X, S, P, mu, V)",
+      "Three voices: Schibsted Grotesk for UI and display, Red Hat Mono for measurements, STIX Two for mathematics",
+      "Small radii (4-8px), shadows only on floating layers",
+      "Figures and equations numbered and captioned like a publication"
+    ],
+    "rules": [
+      {
+        "name": "The Ink Carries Weight Rule",
+        "body": "Primary actions and selected states are charcoal, not teal. Teal appears only for Run, links, focus and caret; if a screen has teal anywhere else, it is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Data Owns Colour Rule",
+        "body": "A series hue means exactly one quantity, on every surface (charts, readout keys, the vessel). Never reuse a series colour for decoration, status or branding.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Numbers Rule",
+        "body": "Any number read against another number is mono with tabular figures (`tnum`). Proportional digits in a readout, table or field are a bug.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence-Case Label Rule",
+        "body": "Labels are small, quiet, sentence case and medium weight. No uppercase, no wide letterspacing.",
+        "section": "typography"
+      },
+      {
+        "name": "The Typeset Math Rule",
+        "body": "Symbols and equations render in STIX Two italic with `ssty`, subscripts at 0.7em; upright units via `.up`. Display equations are centred between hairlines with a mono equation number at the right margin.",
+        "section": "typography"
+      },
+      {
+        "name": "The Hairline Not Card Rule",
+        "body": "Group content with a 1px line or a white sheet with a hairline. If a resting panel has a drop shadow, remove it.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the bench light: canvas #F6F6F4, white sheets, 1px hairlines.",
+      "Do use charcoal ink for primary actions and selected states; keep teal for Run, links, focus and the caret.",
+      "Do colour a quantity only with its series hue, and use that hue for it everywhere.",
+      "Do set every compared number in Red Hat Mono with tabular figures, units in smaller ink-3.",
+      "Do typeset equations in STIX Two, centred between hairlines with a margin equation number.",
+      "Do number and caption figures like a publication.",
+      "Do keep radii at 4-8px and reserve shadows for floating layers.",
+      "Do ease on the smooth-out curve and honour reduced motion."
+    ],
+    "donts": [
+      "Don't build dark neon HUD dashboards, glowing elements, or dark mode.",
+      "Don't use gradients as decoration (the range-track fill and dashed swatch are functional, not ornament).",
+      "Don't put drop shadows on resting cards or panels.",
+      "Don't use uppercase, widely tracked labels or eyebrow kickers above headings.",
+      "Don't use a series hue for decoration, branding or status.",
+      "Don't use proportional figures in readouts, fields or tables."
+    ]
+  }
+}
