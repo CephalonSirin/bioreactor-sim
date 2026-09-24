@@ -9,8 +9,10 @@ import type { ReactorType } from '../../../simulation/types'
 
 type V3 = [number, number, number]
 const HEAD_TOP = Y_TOP + HEAD_T
-const MEDIUM = new THREE.Color('#46e0c8')
-const LED_OFF = new THREE.Color('#34525a')
+// Fresh medium, matching the vessel's straw-coloured medium.
+const MEDIUM = new THREE.Color('#d8cfa4')
+const LED_RUN = new THREE.Color('#2fb37a')
+const LED_OFF = new THREE.Color('#5a6166')
 
 function useTube(points: V3[], fluid: THREE.Color | { value: THREE.Color }) {
   const res = useMemo(() => {
@@ -57,12 +59,11 @@ function Bottle({ position, fill, color }: { position: V3; fill: 'bottle' | 'har
     ].map(([x, y]) => new THREE.Vector2(x, y))
     const glass = new THREE.LatheGeometry(profile, 48)
     const liqMat = new THREE.MeshStandardMaterial({
-      color: '#46e0c8',
+      color: '#e4dab0',
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.7,
       roughness: 0.15,
       metalness: 0,
-      emissive: '#0d3a35',
       depthWrite: false,
     })
     return { glass, liqMat }
@@ -106,12 +107,12 @@ function Bottle({ position, fill, color }: { position: V3; fill: 'bottle' | 'har
 function Pump({ position, flowKey }: { position: V3; flowKey: 'feed' | 'outflow' }) {
   const { bus } = useScene()
   const rotor = useRef<THREE.Group>(null)
-  const led = useMemo(() => ledMaterial('#46e0c8'), [])
+  const led = useMemo(() => ledMaterial('#2fb37a'), [])
   useEffect(() => () => led.dispose(), [led])
   useFrame((_, dt) => {
     const rate = bus.live[flowKey]
     if (rotor.current && !bus.reduced) rotor.current.rotation.z -= Math.min(dt, 0.1) * (1.2 + 7 * rate) * bus.motion
-    led.color.copy(LED_OFF).lerp(MEDIUM, bus.motion)
+    led.color.copy(LED_OFF).lerp(LED_RUN, bus.motion)
   })
   return (
     <group position={position}>
@@ -199,7 +200,7 @@ function FeedLine({ flow }: { flow: boolean }) {
     const rippleMat = new THREE.ShaderMaterial({
       vertexShader: UV_VERT,
       fragmentShader: RIPPLE_FRAG,
-      uniforms: { uColor: { value: new THREE.Color('#bff5ec') }, uTime: { value: 0 }, uAmt: { value: 0 } },
+      uniforms: { uColor: { value: new THREE.Color('#ffffff') }, uTime: { value: 0 }, uAmt: { value: 0 } },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,

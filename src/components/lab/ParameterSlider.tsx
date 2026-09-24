@@ -1,8 +1,9 @@
-import { useEffect, useId, useState } from 'react'
-import InfoTooltip from '../ui/InfoTooltip'
+import { memo, useEffect, useId, useState } from 'react'
+import { renderMath } from '../ui/mathText'
 
 interface ParameterSliderProps {
   label: string
+  /** Math markup, e.g. `μ_{max}`. */
   symbol?: string
   value: number
   min: number
@@ -10,34 +11,26 @@ interface ParameterSliderProps {
   step: number
   unit: string
   onChange: (value: number) => void
-  accent?: string
   tooltip?: React.ReactNode
   disabled?: boolean
+  /** Differs from the loaded experiment's value. */
+  changed?: boolean
 }
 
 const decimalsOf = (step: number) => (step.toString().split('.')[1] ?? '').length
 
-export default function ParameterSlider({
-  label,
-  symbol,
-  value,
-  min,
-  max,
-  step,
-  unit,
-  onChange,
-  accent = '#34525a',
-  tooltip,
-  disabled,
-}: ParameterSliderProps) {
+/**
+ * One instrument setting: name and symbol, an exact numeric entry with
+ * its unit, and a slider for coarse adjustment beneath. Typing commits as
+ * soon as the text is a number (clamped to range); invalid text reverts
+ * on blur.
+ */
+function ParameterSlider({ label, symbol, value, min, max, step, unit, onChange, tooltip, disabled, changed }: ParameterSliderProps) {
   const id = useId()
-  const pct = max > min ? ((value - min) / (max - min)) * 100 : 0
   const digits = decimalsOf(step)
   const safe = Number.isFinite(value) ? value : min
+  const pct = max > min ? ((safe - min) / (max - min)) * 100 : 0
 
-  // The number box keeps a draft so multi-digit values can be typed
-  // freely; it commits (clamped to the allowed range) as soon as the text
-  // is a valid number, and reverts on blur if it isn't.
   const [draft, setDraft] = useState(safe.toFixed(digits))
   const [invalid, setInvalid] = useState(false)
   useEffect(() => {
@@ -56,33 +49,41 @@ export default function ParameterSlider({
     onChange(Math.min(max, Math.max(min, n)))
   }
 
+  const nudge = (dir: 1 | -1, big: boolean) => {
+    const next = Math.min(max, Math.max(min, safe + dir * step * (big ? 10 : 1)))
+    onChange(Number(next.toFixed(digits)))
+  }
+
   return (
-    <div className="py-2.5">
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <label htmlFor={id} className="flex min-w-0 flex-wrap items-baseline text-xs font-medium leading-tight text-paper/90">
-          <span>{label}</span>
-          {symbol && <span className="ml-1 shrink-0 font-mono text-muted">({symbol})</span>}
+    <div className="group/param py-2.5">
+      <div className="flex items-center gap-2">
+        <label htmlFor={id} className="flex min-w-0 flex-1 items-baseline gap-1.5 text-ui text-ink-2" title={typeof tooltip === 'string' ? tooltip : undefined}>
+          <span className="truncate">{label}</span>
+          {symbol && <span className="math shrink-0 text-[14px] text-ink-3">{renderMath(symbol)}</span>}
+          {changed && <span className="h-1.5 w-1.5 shrink-0 self-center rounded-full bg-accent" title="Changed from the loaded experiment" />}
         </label>
-        {tooltip && <InfoTooltip label={`About ${label}`}>{tooltip}</InfoTooltip>}
-        <div className="ml-auto flex shrink-0 items-center gap-1">
-          <input
-            type="text"
-            inputMode="decimal"
-            aria-label={`${label} value`}
-            aria-invalid={invalid}
-            value={draft}
-            disabled={disabled}
-            onChange={(e) => commit(e.target.value)}
-            onBlur={() => {
-              setDraft(safe.toFixed(digits))
-              setInvalid(false)
-            }}
-            className={`w-[4.5rem] rounded border bg-ink-950/70 px-1.5 py-0.5 text-right font-mono text-xs text-paper focus-visible:border-aqua disabled:opacity-40 ${
-              invalid ? 'border-readout-product' : 'border-ink-500'
-            }`}
-          />
-          <span className="w-9 font-mono text-[10px] text-muted">{unit}</span>
-        </div>
+        <input
+          type="text"
+          inputMode="decimal"
+          aria-label={`${label}, ${unit}`}
+          aria-invalid={invalid}
+          aria-describedby={tooltip ? `${id}-d` : undefined}
+          value={draft}
+          disabled={disabled}
+          onChange={(e) => commit(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+              e.preventDefault()
+              nudge(e.key === 'ArrowUp' ? 1 : -1, e.shiftKey)
+            }
+          }}
+          onBlur={() => {
+            setDraft(safe.toFixed(digits))
+            setInvalid(false)
+          }}
+          className="field"
+        />
+        <span className="w-10 shrink-0 font-mono text-micro text-ink-3">{unit}</span>
       </div>
       <input
         id={id}
@@ -93,14 +94,25 @@ export default function ParameterSlider({
         value={safe}
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
-        style={{ ['--slider-fill' as string]: accent, ['--slider-pct' as string]: `${Math.min(Math.max(pct, 0), 100)}%` }}
-        className="disabled:opacity-40"
+        aria-describedby={tooltip ? `${id}-d` : undefined}
+        style={{ ['--pct' as string]: `${Math.min(Math.max(pct, 0), 100)}%` }}
+        className="mt-1.5 block"
       />
+      {tooltip && (
+        // The explanation opens while the setting is being adjusted.
+        <div className="param-desc">
+          <p id={`${id}-d`} className="overflow-hidden text-micro leading-snug text-ink-3">
+            <span className="block pt-1.5">{tooltip}</span>
+          </p>
+        </div>
+      )}
       {invalid && (
-        <p className="mt-1 text-[11px] text-readout-product" role="alert">
-          Allowed range: {min} to {max}. The nearest allowed value is used.
+        <p className="mt-1 text-micro text-danger" role="alert">
+          Allowed range {min} to {max} {unit}. The nearest allowed value is used.
         </p>
       )}
     </div>
   )
 }
+
+export default memo(ParameterSlider)

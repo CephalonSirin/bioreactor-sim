@@ -16,9 +16,9 @@ export const MAT = {
   capBlue: new THREE.MeshStandardMaterial({ color: '#2f6fb7', metalness: 0.05, roughness: 0.4 }),
   capAmber: new THREE.MeshStandardMaterial({ color: '#b8842a', metalness: 0.1, roughness: 0.4 }),
   filter: new THREE.MeshStandardMaterial({ color: '#e9f0ee', metalness: 0, roughness: 0.6 }),
-  screen: new THREE.MeshStandardMaterial({ color: '#061012', metalness: 0.2, roughness: 0.2, emissive: '#0b2a2a', emissiveIntensity: 1 }),
+  screen: new THREE.MeshStandardMaterial({ color: '#15191b', metalness: 0.2, roughness: 0.2, emissive: '#0c1a18', emissiveIntensity: 1 }),
   glassSolid: new THREE.MeshStandardMaterial({
-    color: '#bfe9e2',
+    color: '#dfe6e8',
     metalness: 0,
     roughness: 0.05,
     transparent: true,

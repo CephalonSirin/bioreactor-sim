@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLASS_FRAG, GLASS_VERT } from '../glsl'
@@ -8,8 +8,8 @@ import { H, HEAD_R, HEAD_T, PORT_FEED, PORT_HARVEST, PORT_SPARGE, R_IN, R_OUT, S
 import { Rod, Tube } from './parts'
 
 const HEAD_TOP = Y_TOP + HEAD_T
-const LED_RUN = new THREE.Color('#46e0c8')
-const LED_STOP = new THREE.Color('#f0b545')
+const LED_RUN = new THREE.Color('#2fb37a')
+const LED_STOP = new THREE.Color('#e0a030')
 const polar = (a: number, r: number): [number, number] => [Math.cos(a) * r, Math.sin(a) * r]
 
 function useGlassMaterials() {
@@ -24,13 +24,13 @@ function useGlassMaterials() {
           uY0: { value: Y0 },
           uH: { value: H },
           uFade: { value: 1 },
-          uTint: { value: new THREE.Color('#9fe3d8') },
+          uTint: { value: new THREE.Color('#4d5a61') },
         },
         side,
         transparent: true,
         depthWrite: false,
       })
-    return { back: make(THREE.BackSide, 0.025, 0), front: make(THREE.FrontSide, 0.035, 1) }
+    return { back: make(THREE.BackSide, 0.03, 0), front: make(THREE.FrontSide, 0.045, 1) }
   }, [])
   useEffect(() => () => {
     mats.back.dispose()
@@ -42,14 +42,12 @@ function useGlassMaterials() {
 /** Rushton-style drive, probes and head-plate hardware that never moves. */
 function HeadPlate({ instruments }: { instruments: boolean }) {
   const { bus } = useScene()
-  const led = useMemo(() => ledMaterial('#46e0c8'), [])
-  const ledHalo = useRef<THREE.Mesh>(null)
+  const led = useMemo(() => ledMaterial('#2fb37a'), [])
   useEffect(() => () => led.dispose(), [led])
 
   useFrame(() => {
     // Drive status LED: teal while the impeller turns, amber when stopped.
     led.color.copy(LED_STOP).lerp(LED_RUN, bus.motion)
-    if (ledHalo.current) (ledHalo.current.material as THREE.MeshBasicMaterial).color.copy(led.color)
   })
 
   const bolts = useMemo(() => Array.from({ length: 16 }, (_, i) => polar((i / 16) * Math.PI * 2 + 0.1, 1.1)), [])
@@ -94,10 +92,6 @@ function HeadPlate({ instruments }: { instruments: boolean }) {
       </mesh>
       <mesh position={[0, HEAD_TOP + 0.2, 0]} rotation={[Math.PI / 2, 0, 0]} material={led}>
         <torusGeometry args={[0.305, 0.011, 8, 64]} />
-      </mesh>
-      <mesh ref={ledHalo} position={[0, HEAD_TOP + 0.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.31, 0.03, 8, 64]} />
-        <meshBasicMaterial transparent opacity={0.18} depthWrite={false} toneMapped={false} blending={THREE.AdditiveBlending} />
       </mesh>
 
       {/* Ports: feed, harvest, sparge inlet with sterile filter, septum, condenser */}
@@ -217,8 +211,8 @@ function Baffles() {
 }
 
 function Base() {
-  const screen = useMemo(() => ledMaterial('#46e0c8'), [])
-  const amber = useMemo(() => ledMaterial('#f0b545'), [])
+  const screen = useMemo(() => ledMaterial('#2fb37a'), [])
+  const amber = useMemo(() => ledMaterial('#e0a030'), [])
   useEffect(() => () => {
     screen.dispose()
     amber.dispose()

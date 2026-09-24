@@ -110,12 +110,11 @@ export const GLASS_FRAG = /* glsl */ `
     float key2 = band(az, 0.55, 0.07) * vert;
     float rim = band(az, -2.3, 0.13) * vert;
     float top = smoothstep(0.55, 1.0, R.y);
-    vec3 col = uTint * 0.12;
-    col += vec3(1.0, 0.97, 0.92) * (key * 1.5 + key2 * 0.9);
-    col += vec3(0.45, 0.95, 0.88) * rim * 1.1;
-    col += vec3(0.6, 0.8, 0.85) * top * 0.25;
-    col += vec3(0.4, 0.85, 0.8) * fres * 0.55;
-    float a = uOpacity + fres * 0.32 + key * 0.4 + key2 * 0.3 + rim * 0.35 + top * 0.08;
+    // Edges darken toward a cool graphite (how glass reads against a pale
+    // backdrop); softbox reflections stay near-white.
+    float hi = clamp(key * 1.2 + key2 * 0.8 + rim * 0.6 + top * 0.3, 0.0, 1.0);
+    vec3 col = mix(uTint, vec3(1.0, 0.995, 0.985), hi);
+    float a = uOpacity + fres * 0.42 + key * 0.45 + key2 * 0.3 + rim * 0.3 + top * 0.08;
 
     // Printed graduation marks every 10 % of the working height.
     if (uGrad > 0.5 && gl_FrontFacing) {
@@ -127,8 +126,8 @@ export const GLASS_FRAG = /* glsl */ `
       float major = 1.0 - mod(floor(k + 0.5), 2.0);
       float len = major > 0.5 ? 0.16 : 0.09;
       float inBand = step(abs(paz - 0.98), len) * step(0.05, h) * step(h, 0.96);
-      col += vec3(0.85, 0.95, 0.93) * line * inBand * 0.6;
-      a += line * inBand * 0.35;
+      col = mix(col, vec3(0.16, 0.18, 0.2), line * inBand);
+      a += line * inBand * 0.55;
     }
     gl_FragColor = vec4(col, clamp(a, 0.0, 1.0) * uFade);
     ${OUT}
@@ -173,10 +172,10 @@ export const LIQUID_FRAG = /* glsl */ `
     col += uColor * through * 0.35 * (1.0 - uTurb * 0.5);
     // Faint caustic shimmer in clear medium.
     float c = sin(vWorld.y * 18.0 + uTime * 1.3 + sin(atan(vWorld.z, vWorld.x) * 7.0) * 1.5);
-    col += vec3(0.5, 0.9, 0.85) * smoothstep(0.85, 1.0, c) * 0.05 * (1.0 - uTurb);
+    col += vec3(1.0) * smoothstep(0.85, 1.0, c) * 0.04 * (1.0 - uTurb);
     float fres = pow(1.0 - abs(dot(N, -d)), 2.5);
-    col += fres * vec3(0.6, 0.9, 0.85) * 0.12;
-    float a = mix(0.14, 0.95, absorb);
+    col = mix(col, uColor * 0.72, fres * 0.35);
+    float a = mix(0.26, 0.95, absorb);
     gl_FragColor = vec4(col, a * uFade);
     ${OUT}
   }
@@ -241,7 +240,7 @@ export const SURFACE_FRAG = /* glsl */ `
     float ndv = max(dot(N, V), 0.0);
     float fres = 0.03 + 0.97 * pow(1.0 - ndv, 5.0);
     vec3 R = reflect(-V, N);
-    vec3 sky = mix(vec3(0.02, 0.05, 0.06), vec3(0.16, 0.27, 0.3), smoothstep(-0.1, 0.9, R.y));
+    vec3 sky = mix(vec3(0.62, 0.64, 0.66), vec3(0.96, 0.96, 0.95), smoothstep(-0.1, 0.9, R.y));
     float spec = pow(max(dot(R, uKeyDir), 0.0), 140.0) * 2.2 + pow(max(dot(R, uRimDir), 0.0), 50.0) * 0.6;
     vec3 refr = refract(-V, N, 0.75);
     float L = liquidPathS(vWorld - vec3(0.0, 0.002, 0.0), refr);
@@ -250,8 +249,8 @@ export const SURFACE_FRAG = /* glsl */ `
     vec3 body = uColor * (0.72 + 0.2 * max(dot(N, uKeyDir), 0.0));
     vec3 col = mix(body, sky, fres) + spec;
     float edge = smoothstep(0.9, 1.0, length(vWorld.xz) / uRad);
-    col += vec3(0.7, 0.95, 0.9) * edge * 0.25;
-    float a = clamp(mix(0.12, 0.95, absorb) + fres * 0.45 + spec + edge * 0.2, 0.0, 1.0);
+    col = mix(col, uColor * 0.7, edge * 0.4);
+    float a = clamp(mix(0.26, 0.95, absorb) + fres * 0.35 + spec + edge * 0.25, 0.0, 1.0);
     gl_FragColor = vec4(col, a * uFade);
     ${OUT}
   }
@@ -306,7 +305,7 @@ export const CELL_FRAG = /* glsl */ `
     vec3 n = normalize(vN);
     float diff = 0.4 + 0.6 * max(dot(n, uKeyDir), 0.0);
     float rim = pow(1.0 - abs(dot(n, normalize(vView))), 2.0);
-    vec3 col = uCellColor * vTone * diff + rim * vec3(1.0, 0.86, 0.55) * 0.55;
+    vec3 col = uCellColor * vTone * diff + rim * vec3(1.0, 0.9, 0.7) * 0.4;
     col = mix(uLiquid * 0.8, col, vVis);
     float a = smoothstep(0.03, 0.45, vVis) * 0.95 * uFade;
     if (a < 0.01) discard;
@@ -347,9 +346,8 @@ export const GLOW_FRAG = /* glsl */ `
     vec2 q = gl_PointCoord * 2.0 - 1.0;
     float d = dot(q, q);
     if (d > 1.0) discard;
-    float core = exp(-d * 5.0);
-    vec3 col = uColor * (core * 1.5 + 0.15) * vTw;
-    gl_FragColor = vec4(col, core * vVis * uAlpha);
+    float core = smoothstep(1.0, 0.35, d);
+    gl_FragColor = vec4(uColor, core * vVis * uAlpha * vTw);
     ${OUT}
   }
 `
@@ -365,7 +363,7 @@ export const RING_FRAG = /* glsl */ `
     if (r > 1.0) discard;
     float ring = smoothstep(0.45, 0.68, r) * smoothstep(1.0, 0.8, r);
     float dotc = smoothstep(0.3, 0.0, r) * 0.5;
-    gl_FragColor = vec4(uColor * 1.3, (ring + dotc) * vVis * uAlpha * vTw);
+    gl_FragColor = vec4(uColor, (ring + dotc) * vVis * uAlpha * vTw);
     ${OUT}
   }
 `
@@ -418,8 +416,8 @@ export const BUBBLE_FRAG = /* glsl */ `
     vec3 v = normalize(vView);
     float rim = pow(1.0 - max(dot(n, v), 0.0), 2.2);
     float spec = pow(max(dot(reflect(-v, n), uKeyDir), 0.0), 30.0);
-    vec3 col = vec3(0.85, 1.0, 0.97) * (rim * 0.95 + 0.06) + spec * 1.4;
-    float a = (rim * 0.9 + 0.08 + spec) * mix(0.25, 1.0, vVis) * uFade;
+    vec3 col = mix(vec3(0.5, 0.56, 0.6), vec3(1.0), clamp(spec * 1.4 + 0.25, 0.0, 1.0));
+    float a = (rim * 0.75 + 0.06 + spec) * mix(0.25, 1.0, vVis) * uFade;
     gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));
     ${OUT}
   }
@@ -454,8 +452,9 @@ export const TUBE_FRAG = /* glsl */ `
     float fres = pow(1.0 - abs(dot(normalize(vN), V)), 2.0);
     float k = fract(vUv.x * uLen * 2.2 - uTime * (0.6 + 2.4 * uFlow));
     float pulse = smoothstep(0.0, 0.25, k) * smoothstep(0.7, 0.3, k) * uShow;
-    vec3 col = uFluid * (0.45 + 0.9 * pulse * (0.4 + uFlow)) + vec3(0.8, 0.95, 0.95) * fres * 0.35;
-    float a = 0.42 + fres * 0.35 + pulse * 0.35;
+    vec3 col = mix(vec3(0.86, 0.87, 0.86), uFluid, 0.35 + 0.5 * pulse * (0.4 + uFlow));
+    col = mix(col, vec3(0.45, 0.48, 0.5), fres * 0.6);
+    float a = 0.55 + fres * 0.3 + pulse * 0.2;
     gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));
     ${OUT}
   }
@@ -476,7 +475,7 @@ export const STREAM_FRAG = /* glsl */ `
     float drop = smoothstep(0.0, 0.08, k) * smoothstep(duty + 0.05, duty, k);
     vec3 V = normalize(cameraPosition - vWorld);
     float fres = pow(1.0 - abs(dot(normalize(vN), V)), 1.5);
-    vec3 col = uFluid * 1.6 + fres * 0.5;
+    vec3 col = mix(uFluid, vec3(1.0), 0.25) - fres * 0.15;
     float a = drop * (0.75 + fres * 0.25);
     if (a < 0.01) discard;
     gl_FragColor = vec4(col, a);
@@ -536,8 +535,6 @@ export const FLOOR_VERT = /* glsl */ `
 `
 
 export const FLOOR_FRAG = /* glsl */ `
-  uniform vec3 uGlow;
-  uniform float uGlowAmt;
   uniform float uFade;
   varying vec3 vWorld;
   float grid(vec2 p, float scale) {
@@ -547,60 +544,14 @@ export const FLOOR_FRAG = /* glsl */ `
   }
   void main() {
     float r = length(vWorld.xz);
-    float fade = smoothstep(11.0, 2.5, r);
-    vec3 col = vec3(0.018, 0.04, 0.045);
-    col += vec3(0.27, 0.88, 0.78) * (grid(vWorld.xz, 2.0) * 0.045 + grid(vWorld.xz, 0.5) * 0.09) * fade;
-    // Rings of a turntable-like plinth under the vessel.
-    float ring = smoothstep(0.02, 0.0, abs(r - 1.75)) + smoothstep(0.012, 0.0, abs(r - 2.05)) * 0.6;
-    col += vec3(0.27, 0.88, 0.78) * ring * 0.18;
-    float shadow = smoothstep(2.1, 1.0, r);
-    col *= 1.0 - shadow * 0.55;
-    col += uGlow * uGlowAmt * smoothstep(3.2, 1.1, r) * 0.18;
-    float a = smoothstep(12.0, 5.0, r) * uFade;
-    gl_FragColor = vec4(col, a);
-    ${OUT}
-  }
-`
-
-export const DUST_VERT = /* glsl */ `
-  attribute vec4 aA;
-  uniform float uTime;
-  uniform float uPR;
-  varying float vA;
-  void main() {
-    vec3 p = position;
-    p.y = mod(p.y + uTime * (0.04 + aA.x * 0.06), 7.0) - 0.5;
-    p.x += sin(uTime * 0.2 + aA.y * 30.0) * 0.3;
-    p.z += cos(uTime * 0.17 + aA.z * 30.0) * 0.3;
-    vec4 mv = viewMatrix * vec4(p, 1.0);
-    gl_PointSize = (1.2 + aA.w * 2.4) * uPR * 7.0 / max(-mv.z, 0.1);
-    vA = smoothstep(-0.5, 0.6, p.y) * smoothstep(6.5, 4.5, p.y) * (0.25 + 0.75 * aA.w);
-    gl_Position = projectionMatrix * mv;
-  }
-`
-
-export const DUST_FRAG = /* glsl */ `
-  uniform float uFade;
-  varying float vA;
-  void main() {
-    vec2 q = gl_PointCoord * 2.0 - 1.0;
-    float d = dot(q, q);
-    if (d > 1.0) discard;
-    gl_FragColor = vec4(vec3(0.55, 0.95, 0.88), exp(-d * 4.0) * vA * 0.5 * uFade);
-    ${OUT}
-  }
-`
-
-export const HALO_FRAG = /* glsl */ `
-  uniform vec3 uColor;
-  uniform float uAmt;
-  varying vec2 vUv;
-  varying vec3 vWorld;
-  varying vec3 vN;
-  void main() {
-    vec2 q = vUv * 2.0 - 1.0;
-    float d = dot(q, q);
-    gl_FragColor = vec4(uColor, exp(-d * 3.5) * uAmt * smoothstep(1.0, 0.7, d));
+    float fade = smoothstep(9.0, 2.0, r);
+    float ink = (grid(vWorld.xz, 2.0) * 0.035 + grid(vWorld.xz, 0.5) * 0.06) * fade;
+    // Plinth rings under the vessel.
+    ink += (smoothstep(0.02, 0.0, abs(r - 1.75)) * 0.12 + smoothstep(0.012, 0.0, abs(r - 2.05)) * 0.08) * fade;
+    // Soft contact shadow, a little stronger right under the base.
+    float shadow = smoothstep(2.6, 0.9, r) * 0.2 + smoothstep(1.55, 1.2, r) * 0.18;
+    float a = clamp(ink + shadow, 0.0, 1.0) * uFade;
+    gl_FragColor = vec4(vec3(0.09, 0.1, 0.11), a);
     ${OUT}
   }
 `

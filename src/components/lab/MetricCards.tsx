@@ -1,7 +1,9 @@
 import { memo } from 'react'
 import AnimatedNumber from '../ui/AnimatedNumber'
+import { renderMath } from '../ui/mathText'
 import { specificGrowthRate } from '../../simulation/kinetics'
 import { dilutionRateAt } from '../../simulation/metrics'
+import { SERIES } from '../../lib/palette'
 import type { ReactorConfig, RunningMetrics, SimPoint } from '../../simulation/types'
 
 interface MetricCardsProps {
@@ -9,22 +11,26 @@ interface MetricCardsProps {
   config: ReactorConfig
   running: RunningMetrics | null
   index: number
-  /** Larger type for projectors (presentation mode). */
+  /** Larger type for projectors (classroom mode). */
   large?: boolean
 }
 
-interface CardDef {
+interface Row {
   key: string
-  label: string
+  name: string
   symbol: string
   unit: string
-  color: string
+  color?: string
   value: number
   digits: number
-  bar?: number
-  hint: string
+  note?: string
 }
 
+/**
+ * Live measurements at the playback time, set as an instrument readout:
+ * name and symbol on the left, the value in tabular figures on the right,
+ * with each state variable keyed to its chart line.
+ */
 function MetricCards({ point, config, running, index, large = false }: MetricCardsProps) {
   const preview: SimPoint = {
     t: 0,
@@ -36,70 +42,69 @@ function MetricCards({ point, config, running, index, large = false }: MetricCar
   }
   const p = point ?? preview
   const idx = Math.min(index, (running?.productivity.length ?? 1) - 1)
-  const cards: CardDef[] = [
-    { key: 'X', label: 'Biomass', symbol: 'X', unit: 'g/L', color: '#f0b545', value: p.X, digits: 2, hint: 'cell concentration' },
-    { key: 'S', label: 'Substrate', symbol: 'S', unit: 'g/L', color: '#46e0c8', value: p.S, digits: 2, hint: 'limiting nutrient' },
-    { key: 'P', label: 'Product', symbol: 'P', unit: 'g/L', color: '#f0805f', value: p.P, digits: 2, hint: 'target compound' },
-    {
-      key: 'mu',
-      label: 'Growth rate',
-      symbol: 'μ',
-      unit: 'h⁻¹',
-      color: '#9fd18a',
-      value: p.mu,
-      digits: 3,
-      bar: config.kinetics.muMax > 0 ? p.mu / config.kinetics.muMax : 0,
-      hint: 'fraction of μmax',
-    },
-    { key: 'V', label: 'Volume', symbol: 'V', unit: 'L', color: '#8fa6e8', value: p.V, digits: 2, hint: 'working volume' },
+  const flowing = config.reactorType !== 'batch'
+
+  const state: Row[] = [
+    { key: 'X', name: 'Biomass', symbol: 'X', unit: 'g/L', color: SERIES.X, value: p.X, digits: 3 },
+    { key: 'S', name: 'Substrate', symbol: 'S', unit: 'g/L', color: SERIES.S, value: p.S, digits: 3 },
+    { key: 'P', name: 'Product', symbol: 'P', unit: 'g/L', color: SERIES.P, value: p.P, digits: 3 },
+    { key: 'mu', name: 'Growth rate', symbol: 'μ', unit: 'h⁻¹', color: SERIES.mu, value: p.mu, digits: 3 },
+    { key: 'V', name: 'Volume', symbol: 'V', unit: 'L', color: SERIES.V, value: p.V, digits: 3 },
+  ]
+  const derived: Row[] = [
     {
       key: 'D',
-      label: 'Dilution rate',
+      name: 'Dilution rate',
       symbol: 'D',
       unit: 'h⁻¹',
-      color: '#8fa6e8',
       value: running ? running.dilution[idx] : dilutionRateAt(config, p),
       digits: 3,
-      hint: config.reactorType === 'batch' ? 'no flow in batch' : 'F / V',
+      note: flowing ? undefined : 'no flow',
     },
-    { key: 'prod', label: 'Productivity', symbol: 'Q', unit: 'g/h', color: '#f0805f', value: running ? running.productivity[idx] : 0, digits: 3, hint: 'product formed per hour' },
-    { key: 'yield', label: 'Yield', symbol: 'Yx/s', unit: 'g/g', color: '#f0b545', value: running ? running.yield[idx] : 0, digits: 3, hint: 'biomass per substrate used' },
+    { key: 'Q', name: 'Productivity', symbol: 'Q_{P}', unit: 'g/h', value: running ? running.productivity[idx] : 0, digits: 3 },
+    { key: 'Y', name: 'Realised yield', symbol: 'Y_{x/s}', unit: 'g/g', value: running ? running.yield[idx] : 0, digits: 3 },
   ]
 
+  const muFrac = config.kinetics.muMax > 0 ? Math.min(Math.max(p.mu / config.kinetics.muMax, 0), 1) : 0
+
   return (
-    <div className={`grid gap-2 ${large ? 'grid-cols-2 sm:gap-3' : 'grid-cols-2 sm:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4'}`}>
-      {cards.map((c) => (
-        <div
-          key={c.key}
-          className="glass relative overflow-hidden px-3 py-2.5"
-          style={{ borderLeft: `3px solid ${c.color}` }}
-          role="group"
-          aria-label={`${c.label} ${c.symbol}`}
-        >
-          <div className="flex items-baseline justify-between gap-1">
-            <span className={`font-mono uppercase tracking-wider text-muted ${large ? 'text-xs' : 'text-[10px]'}`}>{c.label}</span>
-            <span className="math text-xs text-dim">{c.symbol}</span>
+    <div className="flex flex-col">
+      <dl>
+        {state.map((r) => (
+          <div key={r.key} className={`grid grid-cols-[1fr_auto] items-baseline gap-x-3 border-b border-line ${large ? 'py-3' : 'py-2'}`}>
+            <dt className={`flex items-baseline gap-2 ${large ? 'text-base' : 'text-ui'} text-ink-2`}>
+              <span className="swatch translate-y-[-3px]" style={{ color: r.color }} aria-hidden="true" />
+              {r.name}
+              <span className="math text-[14px] text-ink-3">{renderMath(r.symbol)}</span>
+            </dt>
+            <dd className="num flex items-baseline justify-end gap-1.5 font-mono">
+              <AnimatedNumber value={r.value} digits={r.digits} duration={180} className={`${large ? 'text-3xl' : 'text-[19px]'} font-medium tracking-[-0.02em] text-ink`} />
+              <span className="w-8 text-micro text-ink-3">{r.unit}</span>
+            </dd>
+            {r.key === 'mu' && (
+              <div className="col-span-2 mt-1.5 flex items-center gap-2" aria-hidden="true">
+                <div className="h-[3px] flex-1 overflow-hidden rounded-full bg-line">
+                  <div className="h-full origin-left rounded-full bg-ink-2 transition-transform duration-150 ease-out" style={{ transform: `scaleX(${muFrac})` }} />
+                </div>
+                <span className="num w-[5.5rem] text-right font-mono text-micro text-ink-3">{(muFrac * 100).toFixed(0)}% of μmax</span>
+              </div>
+            )}
           </div>
-          <div className="mt-1 flex items-baseline gap-1.5">
-            <AnimatedNumber
-              value={c.value}
-              digits={c.digits}
-              className={`readout-value ${large ? 'text-4xl' : 'text-2xl'} font-medium`}
-            />
-            <span className={`font-mono text-muted ${large ? 'text-sm' : 'text-[11px]'}`}>{c.unit}</span>
+        ))}
+      </dl>
+      <dl className="mt-3 grid grid-cols-3 gap-2">
+        {derived.map((r) => (
+          <div key={r.key} className="min-w-0">
+            <dt className="flex items-baseline gap-1 truncate text-micro text-ink-3">
+              {r.name}
+            </dt>
+            <dd className="num mt-0.5 font-mono text-ui text-ink">
+              {r.note ? <span className="text-ink-3">{r.note}</span> : <AnimatedNumber value={r.value} digits={r.digits} duration={180} />}
+              {!r.note && <span className="ml-1 text-micro text-ink-3">{r.unit}</span>}
+            </dd>
           </div>
-          {c.bar !== undefined ? (
-            <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-ink-600" aria-hidden="true">
-              <div
-                className="h-full origin-left rounded-full transition-transform duration-200"
-                style={{ background: c.color, transform: `scaleX(${Math.min(Math.max(c.bar, 0), 1)})` }}
-              />
-            </div>
-          ) : (
-            <div className={`mt-1 text-dim ${large ? 'text-xs' : 'text-[10px]'}`}>{c.hint}</div>
-          )}
-        </div>
-      ))}
+        ))}
+      </dl>
     </div>
   )
 }

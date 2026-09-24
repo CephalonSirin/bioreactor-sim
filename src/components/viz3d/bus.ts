@@ -1,4 +1,5 @@
 import type { VisualTargets } from './visualState'
+import { SERIES } from '../../lib/palette'
 
 export type LayerKey = 'biomass' | 'substrate' | 'product' | 'bubbles' | 'flow' | 'instruments'
 export type Layers = Record<LayerKey, boolean>
@@ -13,12 +14,12 @@ export const ALL_LAYERS: Layers = {
 }
 
 export const LAYER_INFO: { key: LayerKey; label: string; color: string; hint: string }[] = [
-  { key: 'biomass', label: 'Biomass', color: '#f0b545', hint: 'Amber cell particles scale with biomass X (the broth colour always does)' },
-  { key: 'substrate', label: 'Substrate', color: '#46e0c8', hint: 'Glowing teal points scale with substrate S' },
-  { key: 'product', label: 'Product', color: '#f0805f', hint: 'Coral rings scale with product P' },
-  { key: 'bubbles', label: 'Gas', color: '#cfeee9', hint: 'Aeration plus metabolic gas, which rises with growth activity μX' },
-  { key: 'flow', label: 'Flow', color: '#8fa6e8', hint: 'Feed and effluent streams, speed set by F or D' },
-  { key: 'instruments', label: 'Probes', color: '#8ea3a3', hint: 'pH, dissolved-oxygen and temperature probes' },
+  { key: 'biomass', label: 'Biomass', color: SERIES.X, hint: 'Particle density and broth colour follow biomass concentration X. Particles are a density cue, not individual cells.' },
+  { key: 'substrate', label: 'Substrate', color: SERIES.S, hint: 'Dot density follows substrate concentration S, relative to its peak in this run.' },
+  { key: 'product', label: 'Product', color: SERIES.P, hint: 'Ring density follows product concentration P, relative to its peak in this run.' },
+  { key: 'bubbles', label: 'Gas', color: '#8C949A', hint: 'Illustrative: a constant aeration rate plus extra gas scaled by growth activity μX. Oxygen transfer is not modelled.' },
+  { key: 'flow', label: 'Flow', color: SERIES.V, hint: 'Feed and effluent streams; speed follows F (fed-batch) or D·V (CSTR).' },
+  { key: 'instruments', label: 'Hardware', color: '#8C949A', hint: 'Probes and head-plate fittings for context only. pH, dissolved oxygen and temperature are not simulated.' },
 ]
 
 export type Tier = 'high' | 'low'

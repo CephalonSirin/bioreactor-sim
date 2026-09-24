@@ -1,29 +1,24 @@
 import { renderMath } from './mathText'
 
 export function Eq({ children, block = false, className = '' }: { children: string; block?: boolean; className?: string }) {
-  return (
-    <span
-      className={`math ${block ? 'block overflow-x-auto py-1 text-[1.15rem] leading-relaxed sm:text-[1.3rem]' : ''} ${className}`}
-    >
-      {renderMath(children)}
-    </span>
-  )
+  return <span className={`math ${block ? 'block text-[1.18rem] leading-[1.7] sm:text-[1.3rem]' : ''} ${className}`}>{renderMath(children)}</span>
 }
 
-/** Block equation card used across Learn and Methodology. */
-export function EquationBlock({ lines, accent = '#46e0c8', label }: { lines: string[]; accent?: string; label?: string }) {
+/**
+ * Display equation(s), set like a journal: centred on the measure with an
+ * optional equation number in the right margin.
+ */
+export function EquationBlock({ lines, label, number, className = '' }: { lines: string[]; label?: string; number?: string | number; accent?: string; className?: string }) {
   return (
-    <div
-      className="well my-3 overflow-x-auto border-l-2 px-4 py-3"
-      style={{ borderLeftColor: accent }}
-      role="group"
-      aria-label={label ?? 'Equation'}
-    >
-      {lines.map((l, i) => (
-        <Eq key={i} block>
-          {l}
-        </Eq>
-      ))}
+    <div className={`relative my-5 flex items-center gap-4 border-y border-line py-4 ${className}`} role="group" aria-label={label ?? 'Equation'}>
+      <div className="min-w-0 flex-1 overflow-x-auto px-1 text-ink sm:px-6">
+        {lines.map((l, i) => (
+          <Eq key={i} block>
+            {l}
+          </Eq>
+        ))}
+      </div>
+      {number !== undefined && <span className="shrink-0 font-mono text-label text-ink-3">({number})</span>}
     </div>
   )
 }

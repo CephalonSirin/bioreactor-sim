@@ -1,11 +1,12 @@
 import { Component, Suspense, lazy, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import ReactorViz from '../viz/ReactorViz'
-import AnimatedNumber from '../ui/AnimatedNumber'
+import { Check, Crosshair, Layers3, Minus, Plus, Rotate3d } from 'lucide-react'
+import Popover from '../ui/Popover'
 import { ALL_LAYERS, LAYER_INFO, createBus } from './bus'
 import type { LayerKey, Layers } from './bus'
 import { PHASE_LABEL, visualSnapshot } from './visualState'
-import type { CulturePhase, VisualSnapshot } from './visualState'
+import type { VisualSnapshot } from './visualState'
 import { deviceTier, hasWebGL2, labEntrance } from './support'
 import type { CaptureFn } from './ReactorCanvas'
 import { useMediaQuery, useReducedMotion } from '../../hooks/useMediaQuery'
@@ -21,27 +22,15 @@ interface ReactorStageProps {
   variant: 'lab' | 'hero'
   /** Hero only: push the camera into the vessel before navigating. */
   leaving?: boolean
-  large?: boolean
   className?: string
   svgRef?: React.Ref<SVGSVGElement>
   captureRef?: React.MutableRefObject<CaptureFn | null>
 }
 
 const MODE_LINE: Record<ReactorType, [string, string]> = {
-  batch: ['Batch', 'closed system'],
+  batch: ['Batch', 'closed vessel'],
   fedbatch: ['Fed-batch', 'feeding, volume rising'],
   cstr: ['CSTR', 'continuous flow'],
-}
-
-const PHASE_TONE: Record<CulturePhase, string> = {
-  initial: 'border-ink-500 text-muted',
-  growth: 'border-readout-growth/60 text-readout-growth',
-  limited: 'border-readout-biomass/60 text-readout-biomass',
-  stationary: 'border-ink-500 text-muted',
-  steady: 'border-aqua/60 text-aqua',
-  approach: 'border-aqua/40 text-aqua',
-  dilution: 'border-readout-product/60 text-readout-product',
-  washout: 'border-readout-product bg-readout-product/15 text-readout-product',
 }
 
 class GLBoundary extends Component<{ fallback: ReactNode; onError: () => void; children: ReactNode }, { failed: boolean }> {
@@ -63,40 +52,9 @@ function describe(s: VisualSnapshot): string {
   return `3D ${mode} bioreactor at t = ${p.t.toFixed(1)} h. ${PHASE_LABEL[s.phase]}. Volume ${p.V.toFixed(2)} L, biomass ${p.X.toFixed(2)} g/L, substrate ${p.S.toFixed(2)} g/L, product ${p.P.toFixed(2)} g/L.${s.washedOut ? ' The culture has washed out.' : ''}`
 }
 
-function Readout({ label, sym, value, unit, color, digits = 2 }: { label: string; sym: string; value: number; unit: string; color: string; digits?: number }) {
-  return (
-    <div className="hud-tag" style={{ borderLeftColor: color }}>
-      <div className="font-mono text-[9.5px] tracking-[0.14em] text-muted">
-        <span className="uppercase">{label}</span> <span className="math not-italic text-[11px]" style={{ color }}>{sym}</span>
-      </div>
-      <div className="readout-value text-[15px] leading-tight text-paper">
-        <AnimatedNumber value={value} digits={digits} duration={220} /> <span className="text-[10px] text-muted">{unit}</span>
-      </div>
-    </div>
-  )
-}
-
-function IconButton({ label, onClick, children, pressed }: { label: string; onClick: () => void; children: ReactNode; pressed?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      aria-pressed={pressed}
-      className={`hud-btn ${pressed ? 'border-aqua/70 text-aqua' : ''}`}
-    >
-      {children}
-    </button>
-  )
-}
-
 function Hud({
   snap,
   config,
-  playing,
-  hasRun,
-  duration,
   layers,
   onToggle,
   onReset,
@@ -104,13 +62,9 @@ function Hud({
   showOrbitToggle,
   interactive,
   onInteractive,
-  large,
 }: {
   snap: VisualSnapshot
   config: ReactorConfig
-  playing: boolean
-  hasRun: boolean
-  duration: number
   layers: Layers
   onToggle: (k: LayerKey) => void
   onReset: () => void
@@ -118,121 +72,81 @@ function Hud({
   showOrbitToggle: boolean
   interactive: boolean
   onInteractive: () => void
-  large: boolean
 }) {
-  const [open, setOpen] = useState(false)
-  const p = snap.point
-  const [modeName, modeLine] = MODE_LINE[snap.reactorType]
-  const progress = duration > 0 ? Math.min(p.t / duration, 1) : 0
-  const status = playing ? 'running' : hasRun ? 'paused' : 'idle'
-
   return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3 sm:p-4">
-      {/* Top: mode + clock and culture state, then live readouts */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="hud-tag min-w-[150px] border-l-aqua">
-            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-aqua">
-              <span className={`h-1.5 w-1.5 rounded-full ${playing ? 'animate-pulse bg-aqua' : hasRun ? 'bg-readout-biomass' : 'bg-ink-500'}`} />
-              {modeName} · {status}
-            </div>
-            <div className="mt-0.5 font-mono text-[10px] text-muted">{modeLine}</div>
-            <div className={`readout-value mt-1 text-paper ${large ? 'text-xl' : 'text-base'}`}>
-              t = <AnimatedNumber value={p.t} digits={1} duration={160} /> <span className="text-[10px] text-muted">/ {duration.toFixed(0)} h</span>
-            </div>
-            <div className="mt-1.5 h-[2px] w-full overflow-hidden rounded-full bg-ink-600">
-              <div className="h-full origin-left bg-aqua transition-transform duration-200 ease-out" style={{ transform: `scaleX(${progress})` }} />
-            </div>
-          </div>
-          <div
-            className={`rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] backdrop-blur-md transition-colors duration-500 ${PHASE_TONE[snap.phase]}`}
-            role="status"
-            aria-live="polite"
-          >
-            {PHASE_LABEL[snap.phase]}
-          </div>
-        </div>
-
-        {/* Middle: live readouts flanking the vessel */}
-        <div className="pointer-events-none flex items-start justify-between gap-2">
-          <div className="hidden flex-col gap-2 sm:flex">
-            <Readout label="Biomass" sym="X" value={p.X} unit="g/L" color="#f0b545" />
-            <Readout label="Substrate" sym="S" value={p.S} unit="g/L" color="#46e0c8" />
-            <Readout label="Product" sym="P" value={p.P} unit="g/L" color="#f0805f" />
-          </div>
-          <div className="hidden flex-col items-end gap-2 sm:flex">
-            <Readout label="Growth" sym="μ" value={p.mu} unit="h⁻¹" color="#9fd18a" digits={3} />
-            <Readout label="Volume" sym="V" value={p.V} unit="L" color="#8fa6e8" />
-            {snap.reactorType !== 'batch' && (
-              <Readout label={snap.reactorType === 'cstr' ? 'Flow in = out' : 'Feed'} sym={snap.reactorType === 'cstr' ? 'DV' : 'F'} value={snap.flowIn} unit="L/h" color="#8fa6e8" digits={3} />
+    <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3">
+      <div className="flex justify-end">
+        <div className="pointer-events-auto flex items-center gap-0.5 rounded-md border border-line bg-surface/90 p-0.5 shadow-lift backdrop-blur-sm">
+          <Popover
+            origin="top-right"
+            label="Visual layers"
+            panelClassName="w-[300px]"
+            trigger={(t) => (
+              <button type="button" {...t} className="icon-btn" aria-label="Visual layers" title="Visual layers">
+                <Layers3 aria-hidden="true" />
+              </button>
             )}
-          </div>
+          >
+            {() => (
+              <div className="menu">
+                <p className="px-2.5 pb-1 pt-1.5 text-label font-semibold text-ink">What the vessel shows</p>
+                {LAYER_INFO.map((l) => (
+                  <button
+                    key={l.key}
+                    type="button"
+                    role="menuitemcheckbox"
+                    aria-checked={layers[l.key]}
+                    onClick={() => onToggle(l.key)}
+                    className="menu-item !items-start"
+                  >
+                    <span
+                      className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border transition-colors duration-150 ${
+                        layers[l.key] ? 'border-ink bg-ink text-white' : 'border-line-strong bg-surface text-transparent'
+                      }`}
+                      aria-hidden="true"
+                    >
+                      <Check className="!h-3 !w-3 !text-current" strokeWidth={3} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-1.5 font-medium text-ink">
+                        <span className="swatch" style={{ color: l.color }} />
+                        {l.label}
+                      </span>
+                      <span className="mt-0.5 block text-micro leading-snug text-ink-3">{l.hint}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </Popover>
+          <span className="mx-0.5 h-4 w-px bg-line" aria-hidden="true" />
+          {showOrbitToggle && (
+            <button type="button" onClick={onInteractive} aria-pressed={interactive} className="icon-btn" aria-label={interactive ? 'Lock view so the page scrolls' : 'Rotate the vessel'} title="Rotate">
+              <Rotate3d aria-hidden="true" />
+            </button>
+          )}
+          <button type="button" onClick={() => onZoom(-1)} className="icon-btn" aria-label="Zoom out" title="Zoom out">
+            <Minus aria-hidden="true" />
+          </button>
+          <button type="button" onClick={() => onZoom(1)} className="icon-btn" aria-label="Zoom in" title="Zoom in">
+            <Plus aria-hidden="true" />
+          </button>
+          <button type="button" onClick={onReset} className="icon-btn" aria-label="Reset camera" title="Reset camera (0)">
+            <Crosshair aria-hidden="true" />
+          </button>
         </div>
-
       </div>
 
       {snap.washedOut && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-16 flex justify-center px-4">
-          <div className="animate-rise-in max-w-sm rounded-lg border border-readout-product/80 bg-ink-950/75 px-4 py-2 text-center backdrop-blur-md">
-            <div className="font-mono text-sm font-semibold tracking-[0.24em] text-readout-product">WASHOUT</div>
-            <div className="mt-0.5 text-[11px] leading-snug text-muted">
-              D = {config.cstr.D.toFixed(2)} h⁻¹ outpaces net growth μ − k<sub>d</sub>: cells leave faster than they divide
-            </div>
+        <div className="flex justify-center px-2">
+          <div className="pop-in max-w-md rounded-md border border-danger-line bg-surface/95 px-3.5 py-2 text-center shadow-lift" role="status">
+            <p className="text-ui font-semibold text-danger">Washout</p>
+            <p className="mt-0.5 text-label leading-snug text-ink-2">
+              D = {config.cstr.D.toFixed(2)} h⁻¹ exceeds the net growth rate μ − k<sub>d</sub>: cells leave faster than they divide.
+            </p>
           </div>
         </div>
       )}
-
-      {/* Bottom: visual layers + camera */}
-      <div className="flex items-end justify-between gap-2">
-        <div className="pointer-events-auto flex flex-col items-start gap-2">
-          {open && (
-            <div className="hud-panel flex max-w-[330px] flex-wrap gap-1.5" role="group" aria-label="Visual layers">
-              {LAYER_INFO.map((l) => (
-                <button
-                  key={l.key}
-                  type="button"
-                  onClick={() => onToggle(l.key)}
-                  aria-pressed={layers[l.key]}
-                  title={l.hint}
-                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors ${
-                    layers[l.key] ? 'border-ink-500 bg-ink-800/80 text-paper' : 'border-ink-600 text-dim line-through'
-                  }`}
-                >
-                  <span className="h-2 w-2 rounded-full" style={{ background: layers[l.key] ? l.color : 'transparent', boxShadow: `0 0 0 1px ${l.color}` }} />
-                  {l.label}
-                </button>
-              ))}
-            </div>
-          )}
-          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="hud-btn w-auto gap-1.5 px-2.5 font-mono text-[10px] uppercase tracking-wider">
-            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true">
-              <path d="M8 2 14 5 8 8 2 5Z M2 8l6 3 6-3 M2 11l6 3 6-3" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-            </svg>
-            Visual layers
-          </button>
-        </div>
-        <div className="pointer-events-auto flex items-center gap-1.5">
-          {showOrbitToggle && (
-            <IconButton label={interactive ? 'Lock view (scroll page)' : 'Rotate the reactor'} onClick={onInteractive} pressed={interactive}>
-              <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true">
-                <path d="M3 8a5 5 0 0 1 9-3M13 8a5 5 0 0 1-9 3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                <path d="M12 2v3H9M4 14v-3h3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-              </svg>
-            </IconButton>
-          )}
-          <IconButton label="Zoom out" onClick={() => onZoom(-1)}>
-            <span aria-hidden="true">−</span>
-          </IconButton>
-          <IconButton label="Zoom in" onClick={() => onZoom(1)}>
-            <span aria-hidden="true">+</span>
-          </IconButton>
-          <IconButton label="Reset camera" onClick={onReset}>
-            <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true">
-              <path d="M3.5 8a4.5 4.5 0 1 0 1.3-3.2M3.5 2.5v2.8h2.8" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </IconButton>
-        </div>
-      </div>
     </div>
   )
 }
@@ -242,7 +156,7 @@ function Hud({
  * drawing as a fallback when WebGL is unavailable or fails. Simulation
  * updates only write to a mutable bus; the WebGL scene reads it per frame.
  */
-function ReactorStage({ point, config, extents, playing, variant, leaving = false, large = false, className = '', svgRef, captureRef }: ReactorStageProps) {
+function ReactorStage({ point, config, extents, playing, variant, leaving = false, className = '', svgRef, captureRef }: ReactorStageProps) {
   const reduced = useReducedMotion()
   const coarse = useMediaQuery('(pointer: coarse)')
   const compact = useMediaQuery('(max-width: 640px)')
@@ -320,8 +234,7 @@ function ReactorStage({ point, config, extents, playing, variant, leaving = fals
     }
   }
 
-  const duration = extents?.duration || config.settings.duration
-  const fallback = (
+    const fallback = (
     <div className="flex h-full w-full items-center justify-center p-4">
       <ReactorViz svgRef={svgRef} point={point} config={config} extents={extents} playing={playing} showLegend={variant === 'lab'} className="h-full max-h-full w-auto max-w-full" />
     </div>
@@ -339,7 +252,6 @@ function ReactorStage({ point, config, extents, playing, variant, leaving = fals
       aria-roledescription={isLab ? '3D reactor view' : undefined}
       aria-label={`${describe(snap)}${isLab && use3d ? ' Drag or use arrow keys to rotate, plus and minus to zoom, 0 to reset the camera.' : ''}`}
     >
-      <div className="stage-glow" aria-hidden="true" style={{ opacity: 0.55 + 0.45 * snap.targets.turbidity }} />
       {use3d ? (
         <GLBoundary fallback={fallback} onError={onLost}>
           <Suspense fallback={null}>
@@ -362,7 +274,7 @@ function ReactorStage({ point, config, extents, playing, variant, leaving = fals
           </Suspense>
           {!ready && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-dim">Initialising instrument…</span>
+              <span className="t-meta">Loading 3D view…</span>
             </div>
           )}
         </GLBoundary>
@@ -373,9 +285,6 @@ function ReactorStage({ point, config, extents, playing, variant, leaving = fals
         <Hud
           snap={snap}
           config={config}
-          playing={playing}
-          hasRun={extents !== null}
-          duration={duration}
           layers={layers}
           onToggle={onToggle}
           onReset={onReset}
@@ -383,7 +292,6 @@ function ReactorStage({ point, config, extents, playing, variant, leaving = fals
           showOrbitToggle={coarse}
           interactive={interactive}
           onInteractive={() => setInteractive((v) => !v)}
-          large={large}
         />
       )}
     </div>

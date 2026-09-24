@@ -1,35 +1,36 @@
 import type { ReactorType } from '../../simulation/types'
 
-/** Small schematic of a reactor mode showing what flows in and out. */
-export default function ReactorGlyph({ type, className }: { type: ReactorType; className?: string }) {
-  const liquid = type === 'fedbatch' ? 0.42 : 0.6
-  const top = 70 - liquid * 44
+/**
+ * Process schematic of a reactor configuration, drawn like a flow diagram:
+ * the vessel in section, the culture level, and the streams that cross
+ * the boundary (none, feed only, or feed and effluent).
+ */
+export default function ReactorGlyph({ type, className = '', title }: { type: ReactorType; className?: string; title?: string }) {
+  const level = type === 'fedbatch' ? 20 : 26
   return (
-    <svg viewBox="0 0 120 96" className={className} aria-hidden="true">
-      <path d="M40 24 V64 Q40 72 48 72 H72 Q80 72 80 64 V24 Z" fill="none" stroke="rgba(190,240,232,0.7)" strokeWidth="1.8" />
-      <clipPath id={`g-${type}`}>
-        <path d="M41 24 V64 Q41 71 48 71 H72 Q79 71 79 64 V24 Z" />
-      </clipPath>
-      <g clipPath={`url(#g-${type})`}>
-        <rect x="40" y={top + 26} width="40" height="60" fill="#f0b545" opacity="0.42" />
-      </g>
-      {type === 'fedbatch' && <rect x="41" y={top + 26} width="38" height="46" fill="#f0b545" opacity="0.15" clipPath={`url(#g-${type})`} />}
-      <line x1="60" y1="18" x2="60" y2="62" stroke="#93a9a9" strokeWidth="1.6" />
-      <rect x="50" y="56" width="20" height="4" rx="1" fill="#b7c9c8" />
-      <rect x="37" y="20" width="46" height="5" rx="2" fill="#3d5557" />
+    <svg viewBox="0 0 64 48" className={className} role={title ? 'img' : undefined} aria-label={title} aria-hidden={title ? undefined : true} fill="none">
+      {/* culture */}
+      <path d={`M22.8 ${level} H41.2 V37 a4 4 0 0 1 -4 4 H26.8 a4 4 0 0 1 -4 -4 Z`} fill="#C18A12" opacity="0.28" />
+      {type === 'fedbatch' && <path d="M22.8 26 H41.2" stroke="#C18A12" strokeWidth="1" strokeDasharray="1.5 2" opacity="0.8" />}
+      <path d={`M22.8 ${level} H41.2`} stroke="#C18A12" strokeWidth="1.3" />
+      {/* vessel */}
+      <path d="M22 9 V37 a5 5 0 0 0 5 5 H37 a5 5 0 0 0 5 -5 V9" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M19.5 9 H44.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M32 5 V33 M28.5 33 H35.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      {/* feed */}
       {type !== 'batch' && (
-        <g stroke="#46e0c8" strokeWidth="2" fill="none" strokeLinecap="round">
-          <path d="M6 12 H54 V30" />
-          <path d="M50 26 l4 5 l4 -5" fill="#46e0c8" stroke="none" />
+        <g stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 5 H26 V14" />
+          <path d="M23.5 11.5 L26 14.5 L28.5 11.5" />
         </g>
       )}
+      {/* effluent */}
       {type === 'cstr' && (
-        <g stroke="#f0b545" strokeWidth="2" fill="none" strokeLinecap="round">
-          <path d="M80 40 H108 V64" />
-          <path d="M104 60 l4 5 l4 -5" fill="#f0b545" stroke="none" />
+        <g stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M42 30 H55 V42" />
+          <path d="M52.5 39.5 L55 42.5 L57.5 39.5" />
         </g>
       )}
-      {type === 'batch' && <text x="60" y="12" textAnchor="middle" fontSize="8" fill="#6b8183" fontFamily="IBM Plex Mono, monospace">closed</text>}
     </svg>
   )
 }

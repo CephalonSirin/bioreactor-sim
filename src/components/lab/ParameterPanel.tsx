@@ -1,287 +1,326 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import ParameterSlider from './ParameterSlider'
 import { criticalDilutionRate } from '../../simulation/kinetics'
 import type { ReactorConfig } from '../../simulation/types'
 
 interface ParameterPanelProps {
   config: ReactorConfig
+  /** The loaded experiment's configuration, to mark edited values. */
+  reference: ReactorConfig
   onChange: (config: ReactorConfig) => void
   disabled?: boolean
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Group({ title, note, children, defaultOpen = true }: { title: string; note?: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
   return (
-    <details open className="group border-b border-ink-600/70 py-1 last:border-b-0">
-      <summary className="flex cursor-pointer items-center justify-between py-2 font-display text-[13px] font-semibold text-paper">
-        {title}
-        <span className="text-muted transition-transform duration-200 group-open:rotate-90" aria-hidden="true">
-          ›
-        </span>
-      </summary>
-      <div className="pb-2">{children}</div>
-    </details>
+    <section className="t-acc border-b border-line last:border-b-0" data-open={open}>
+      <h3>
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+          className="flex w-full items-center gap-2 py-3 text-left text-ui font-semibold text-ink transition-colors hover:text-ink-2"
+        >
+          <span className="flex-1">{title}</span>
+          {note && <span className="text-micro font-normal text-ink-3">{note}</span>}
+          <ChevronDown className="t-acc-chevron h-4 w-4 text-ink-3" strokeWidth={1.75} aria-hidden="true" />
+        </button>
+      </h3>
+      <div className="t-acc-panel">
+        <div className="t-acc-inner">
+          <div className="pb-3">{children}</div>
+        </div>
+      </div>
+    </section>
   )
 }
 
 function CriticalHint({ config }: { config: ReactorConfig }) {
   const dCrit = criticalDilutionRate(config.cstr.Sf, config.kinetics)
   const washout = config.cstr.D >= dCrit
+  const margin = dCrit > 0 ? Math.min(config.cstr.D / dCrit, 1.25) : 1.25
   return (
-    <p
-      className={`my-1 rounded border px-2.5 py-1.5 font-mono text-[11px] ${
-        washout ? 'border-readout-product/60 bg-readout-product/10 text-readout-product' : 'border-aqua/30 bg-aqua/5 text-aqua'
-      }`}
-    >
-      D_crit = {dCrit.toFixed(3)} h⁻¹ · {washout ? 'D ≥ D_crit → washout' : 'D < D_crit → stable'}
-    </p>
+    <div className="mb-1 mt-1 rounded-md border border-line bg-canvas px-3 py-2.5">
+      <div className="flex items-baseline justify-between gap-2 text-label">
+        <span className="text-ink-2">
+          <span className="math text-[14px]">D</span> relative to <span className="math text-[14px]">D</span>
+          <sub className="math">crit</sub> = <span className="num font-mono">{dCrit.toFixed(3)}</span> h⁻¹
+        </span>
+        <span className={`font-medium ${washout ? 'text-danger' : 'text-ok'}`}>{washout ? 'Washout' : 'Stable'}</span>
+      </div>
+      <div className="relative mt-2 h-1 rounded-full bg-line" aria-hidden="true">
+        <div className="absolute inset-y-0 left-0 rounded-full bg-ink-2 transition-[width] duration-200 ease-out" style={{ width: `${(margin / 1.25) * 100}%` }} />
+        <div className="absolute -top-1 h-3 w-px bg-danger" style={{ left: `${100 / 1.25}%` }} />
+      </div>
+    </div>
   )
 }
 
-function ParameterPanel({ config, onChange, disabled }: ParameterPanelProps) {
+function ParameterPanel({ config, reference, onChange, disabled }: ParameterPanelProps) {
   const update = (patch: Partial<ReactorConfig>) => onChange({ ...config, ...patch })
+  const { initial: i0, kinetics: k, fedBatch: fb, cstr, settings: st } = config
+  const ch = (a: number, b: number) => Math.abs(a - b) > 1e-12
 
   return (
-    <div className="glass flex flex-col p-4">
-      <Section title="Initial conditions">
-        <ParameterSlider
-          label="Initial biomass"
-          symbol="X₀"
-          unit="g/L"
-          value={config.initial.X0}
-          min={0.01}
-          max={5}
-          step={0.01}
-          accent="#e0a940"
-          disabled={disabled}
-          onChange={(v) => update({ initial: { ...config.initial, X0: v } })}
-          tooltip="The starting concentration of cells (biomass) in the vessel, before any growth has occurred."
-        />
-        <ParameterSlider
-          label="Initial substrate"
-          symbol="S₀"
-          unit="g/L"
-          value={config.initial.S0}
-          min={0}
-          max={50}
-          step={0.1}
-          accent="#4fb8ae"
-          disabled={disabled}
-          onChange={(v) => update({ initial: { ...config.initial, S0: v } })}
-          tooltip="The starting concentration of limiting substrate (e.g. glucose) — the 'food' that drives growth."
-        />
-        <ParameterSlider
-          label="Initial volume"
-          symbol="V₀"
-          unit="L"
-          value={config.initial.V0}
-          min={0.5}
-          max={20}
-          step={0.1}
-          accent="#8b9dc9"
-          disabled={disabled}
-          onChange={(v) => update({ initial: { ...config.initial, V0: v } })}
-          tooltip="The starting working volume of liquid in the reactor vessel."
-        />
-      </Section>
-
-      <Section title="Growth &amp; product kinetics">
-        <ParameterSlider
-          label="Max specific growth rate"
-          symbol="μmax"
-          unit="1/h"
-          value={config.kinetics.muMax}
-          min={0.05}
-          max={1.5}
-          step={0.01}
-          accent="#8fb996"
-          disabled={disabled}
-          onChange={(v) => update({ kinetics: { ...config.kinetics, muMax: v } })}
-          tooltip="The fastest possible growth rate the culture can achieve, reached when substrate is far in excess of Ks."
-        />
-        <ParameterSlider
-          label="Monod constant"
-          symbol="Ks"
-          unit="g/L"
-          value={config.kinetics.Ks}
-          min={0.01}
-          max={5}
-          step={0.01}
-          accent="#4fb8ae"
-          disabled={disabled}
-          onChange={(v) => update({ kinetics: { ...config.kinetics, Ks: v } })}
-          tooltip="The substrate concentration at which growth rate is exactly half of mu_max. A small Ks means the organism is efficient even at low substrate levels."
-        />
-        <ParameterSlider
-          label="Biomass yield on substrate"
-          symbol="Yxs"
-          unit="g/g"
-          value={config.kinetics.Yxs}
-          min={0.05}
-          max={1}
-          step={0.01}
-          accent="#e0a940"
-          disabled={disabled}
-          onChange={(v) => update({ kinetics: { ...config.kinetics, Yxs: v } })}
-          tooltip="Grams of biomass produced per gram of substrate consumed for growth."
-        />
-        <ParameterSlider
-          label="Product yield on substrate"
-          symbol="Yps"
-          unit="g/g"
-          value={config.kinetics.Yps}
-          min={0.05}
-          max={1}
-          step={0.01}
-          accent="#e0785a"
-          disabled={disabled}
-          onChange={(v) => update({ kinetics: { ...config.kinetics, Yps: v } })}
-          tooltip="Grams of product formed per gram of substrate directed toward product synthesis."
-        />
-        <ParameterSlider
-          label="Growth-associated product coeff."
-          symbol="α"
-          unit="g/g"
-          value={config.kinetics.alpha}
-          min={0}
-          max={1}
-          step={0.01}
-          accent="#e0785a"
-          disabled={disabled}
-          onChange={(v) => update({ kinetics: { ...config.kinetics, alpha: v } })}
-          tooltip="Luedeking–Piret coefficient: product formed in direct proportion to growth rate (e.g. primary metabolites)."
-        />
-        <ParameterSlider
-          label="Non-growth-associated product coeff."
-          symbol="β"
-          unit="1/h"
-          value={config.kinetics.beta}
-          min={0}
-          max={0.2}
-          step={0.005}
-          accent="#e0785a"
-          disabled={disabled}
-          onChange={(v) => update({ kinetics: { ...config.kinetics, beta: v } })}
-          tooltip="Luedeking–Piret coefficient: product formed proportional to biomass present, even without active growth (e.g. secondary metabolites)."
-        />
-        <ParameterSlider
-          label="Maintenance coefficient"
-          symbol="ms"
-          unit="g/g/h"
-          value={config.kinetics.ms}
-          min={0}
-          max={0.1}
-          step={0.001}
-          accent="#546366"
-          disabled={disabled}
-          onChange={(v) => update({ kinetics: { ...config.kinetics, ms: v } })}
-          tooltip="Substrate consumed for cell maintenance (non-growth functions), independent of growth."
-        />
-        <ParameterSlider
-          label="Death / decay rate"
-          symbol="kd"
-          unit="1/h"
-          value={config.kinetics.kd}
-          min={0}
-          max={0.1}
-          step={0.001}
-          accent="#546366"
-          disabled={disabled}
-          onChange={(v) => update({ kinetics: { ...config.kinetics, kd: v } })}
-          tooltip="The rate at which cells die or lose viability, independent of growth."
-        />
-      </Section>
-
+    <div className="flex flex-col">
       {config.reactorType === 'fedbatch' && (
-        <Section title="Feed settings">
+        <Group title="Feed">
           <ParameterSlider
-            label="Feed flow rate"
+            label="Feed rate"
             symbol="F"
             unit="L/h"
-            value={config.fedBatch.F}
+            value={fb.F}
             min={0}
             max={0.5}
             step={0.005}
-            accent="#4fb8ae"
             disabled={disabled}
-            onChange={(v) => update({ fedBatch: { ...config.fedBatch, F: v } })}
-            tooltip="Volumetric rate at which fresh feed is pumped into the vessel. Zero feed rate reduces this to a batch reactor."
+            changed={ch(fb.F, reference.fedBatch.F)}
+            onChange={(v) => update({ fedBatch: { ...fb, F: v } })}
+            tooltip="Volumetric flow of fresh feed into the vessel. With F = 0 the run is identical to a batch."
           />
           <ParameterSlider
-            label="Feed substrate concentration"
-            symbol="Sf"
+            label="Feed substrate"
+            symbol="S_{f}"
             unit="g/L"
-            value={config.fedBatch.Sf}
+            value={fb.Sf}
             min={1}
             max={300}
             step={1}
-            accent="#4fb8ae"
             disabled={disabled}
-            onChange={(v) => update({ fedBatch: { ...config.fedBatch, Sf: v } })}
-            tooltip="Substrate concentration in the feed stream, typically much higher than the vessel concentration."
+            changed={ch(fb.Sf, reference.fedBatch.Sf)}
+            onChange={(v) => update({ fedBatch: { ...fb, Sf: v } })}
+            tooltip="Substrate concentration in the feed, usually far above the concentration in the vessel."
           />
-        </Section>
+        </Group>
       )}
 
       {config.reactorType === 'cstr' && (
-        <Section title="Continuous operation">
+        <Group title="Continuous flow">
           <ParameterSlider
             label="Dilution rate"
             symbol="D"
-            unit="1/h"
-            value={config.cstr.D}
+            unit="h⁻¹"
+            value={cstr.D}
             min={0.01}
             max={1}
             step={0.005}
-            accent="#8b9dc9"
             disabled={disabled}
-            onChange={(v) => update({ cstr: { ...config.cstr, D: v } })}
-            tooltip="D = F/V, the flow rate through the vessel divided by its volume. Too high a dilution rate washes cells out faster than they can grow."
+            changed={ch(cstr.D, reference.cstr.D)}
+            onChange={(v) => update({ cstr: { ...cstr, D: v } })}
+            tooltip="D = F/V, the fraction of the vessel volume replaced each hour. Above the critical dilution rate cells leave faster than they can grow."
           />
           <CriticalHint config={config} />
           <ParameterSlider
-            label="Feed substrate concentration"
-            symbol="Sf"
+            label="Feed substrate"
+            symbol="S_{f}"
             unit="g/L"
-            value={config.cstr.Sf}
+            value={cstr.Sf}
             min={1}
             max={100}
             step={1}
-            accent="#4fb8ae"
             disabled={disabled}
-            onChange={(v) => update({ cstr: { ...config.cstr, Sf: v } })}
-            tooltip="Substrate concentration in the continuous feed stream entering the vessel."
+            changed={ch(cstr.Sf, reference.cstr.Sf)}
+            onChange={(v) => update({ cstr: { ...cstr, Sf: v } })}
+            tooltip="Substrate concentration in the continuous feed stream."
           />
-        </Section>
+        </Group>
       )}
 
-      <Section title="Run settings">
+      <Group title="Initial conditions">
         <ParameterSlider
-          label="Simulation duration"
-          symbol="t"
+          label="Biomass"
+          symbol="X_{0}"
+          unit="g/L"
+          value={i0.X0}
+          min={0.01}
+          max={5}
+          step={0.01}
+          disabled={disabled}
+          changed={ch(i0.X0, reference.initial.X0)}
+          onChange={(v) => update({ initial: { ...i0, X0: v } })}
+          tooltip="Cell concentration at t = 0 (the inoculum), in grams of dry biomass per litre."
+        />
+        <ParameterSlider
+          label="Substrate"
+          symbol="S_{0}"
+          unit="g/L"
+          value={i0.S0}
+          min={0}
+          max={50}
+          step={0.1}
+          disabled={disabled}
+          changed={ch(i0.S0, reference.initial.S0)}
+          onChange={(v) => update({ initial: { ...i0, S0: v } })}
+          tooltip="Concentration of the limiting substrate (for example glucose) at t = 0."
+        />
+        <ParameterSlider
+          label="Product"
+          symbol="P_{0}"
+          unit="g/L"
+          value={i0.P0}
+          min={0}
+          max={20}
+          step={0.1}
+          disabled={disabled}
+          changed={ch(i0.P0, reference.initial.P0)}
+          onChange={(v) => update({ initial: { ...i0, P0: v } })}
+          tooltip="Product already present at t = 0, for example carried over with the inoculum."
+        />
+        <ParameterSlider
+          label="Volume"
+          symbol="V_{0}"
+          unit="L"
+          value={i0.V0}
+          min={0.5}
+          max={20}
+          step={0.1}
+          disabled={disabled}
+          changed={ch(i0.V0, reference.initial.V0)}
+          onChange={(v) => update({ initial: { ...i0, V0: v } })}
+          tooltip="Working volume of liquid at t = 0."
+        />
+      </Group>
+
+      <Group title="Growth kinetics" note="Monod">
+        <ParameterSlider
+          label="Max. growth rate"
+          symbol="μ_{max}"
+          unit="h⁻¹"
+          value={k.muMax}
+          min={0.05}
+          max={1.5}
+          step={0.01}
+          disabled={disabled}
+          changed={ch(k.muMax, reference.kinetics.muMax)}
+          onChange={(v) => update({ kinetics: { ...k, muMax: v } })}
+          tooltip="The highest specific growth rate, approached when substrate is far above Ks. Doubling time is ln 2 / μ."
+        />
+        <ParameterSlider
+          label="Half-saturation"
+          symbol="K_{s}"
+          unit="g/L"
+          value={k.Ks}
+          min={0.01}
+          max={5}
+          step={0.01}
+          disabled={disabled}
+          changed={ch(k.Ks, reference.kinetics.Ks)}
+          onChange={(v) => update({ kinetics: { ...k, Ks: v } })}
+          tooltip="Substrate concentration at which μ = μmax / 2. A small Ks means the organism grows well even at low substrate."
+        />
+        <ParameterSlider
+          label="Biomass yield"
+          symbol="Y_{x/s}"
+          unit="g/g"
+          value={k.Yxs}
+          min={0.05}
+          max={1}
+          step={0.01}
+          disabled={disabled}
+          changed={ch(k.Yxs, reference.kinetics.Yxs)}
+          onChange={(v) => update({ kinetics: { ...k, Yxs: v } })}
+          tooltip="Grams of biomass formed per gram of substrate used for growth."
+        />
+        <ParameterSlider
+          label="Maintenance"
+          symbol="m_{s}"
+          unit="g/g·h"
+          value={k.ms}
+          min={0}
+          max={0.1}
+          step={0.001}
+          disabled={disabled}
+          changed={ch(k.ms, reference.kinetics.ms)}
+          onChange={(v) => update({ kinetics: { ...k, ms: v } })}
+          tooltip="Substrate consumed per gram of biomass per hour just to stay alive, independent of growth."
+        />
+        <ParameterSlider
+          label="Death rate"
+          symbol="k_{d}"
+          unit="h⁻¹"
+          value={k.kd}
+          min={0}
+          max={0.1}
+          step={0.001}
+          disabled={disabled}
+          changed={ch(k.kd, reference.kinetics.kd)}
+          onChange={(v) => update({ kinetics: { ...k, kd: v } })}
+          tooltip="Fraction of biomass lost to death or decay per hour."
+        />
+      </Group>
+
+      <Group title="Product formation" note="Luedeking–Piret">
+        <ParameterSlider
+          label="Growth-associated"
+          symbol="α"
+          unit="g/g"
+          value={k.alpha}
+          min={0}
+          max={1}
+          step={0.01}
+          disabled={disabled}
+          changed={ch(k.alpha, reference.kinetics.alpha)}
+          onChange={(v) => update({ kinetics: { ...k, alpha: v } })}
+          tooltip="Product formed in proportion to growth, as for many primary metabolites."
+        />
+        <ParameterSlider
+          label="Non-growth-associated"
+          symbol="β"
+          unit="g/g·h"
+          value={k.beta}
+          min={0}
+          max={0.2}
+          step={0.005}
+          disabled={disabled}
+          changed={ch(k.beta, reference.kinetics.beta)}
+          onChange={(v) => update({ kinetics: { ...k, beta: v } })}
+          tooltip="Product formed per gram of biomass per hour even without growth, as for many secondary metabolites."
+        />
+        <ParameterSlider
+          label="Product yield"
+          symbol="Y_{p/s}"
+          unit="g/g"
+          value={k.Yps}
+          min={0.05}
+          max={1}
+          step={0.01}
+          disabled={disabled}
+          changed={ch(k.Yps, reference.kinetics.Yps)}
+          onChange={(v) => update({ kinetics: { ...k, Yps: v } })}
+          tooltip="Grams of product formed per gram of substrate directed to product synthesis."
+        />
+      </Group>
+
+      <Group title="Run" note="RK4" defaultOpen={false}>
+        <ParameterSlider
+          label="Duration"
+          symbol="t_{end}"
           unit="h"
-          value={config.settings.duration}
+          value={st.duration}
           min={1}
           max={200}
           step={1}
-          accent="#eee9df"
           disabled={disabled}
-          onChange={(v) => update({ settings: { ...config.settings, duration: v } })}
-          tooltip="Total simulated time span, in hours."
+          changed={ch(st.duration, reference.settings.duration)}
+          onChange={(v) => update({ settings: { ...st, duration: v } })}
+          tooltip="Total simulated time."
         />
         <ParameterSlider
-          label="Integration time step"
+          label="Time step"
           symbol="Δt"
           unit="h"
-          value={config.settings.dt}
+          value={st.dt}
           min={0.005}
           max={0.5}
           step={0.005}
-          accent="#546366"
           disabled={disabled}
-          onChange={(v) => update({ settings: { ...config.settings, dt: v } })}
-          tooltip="The numerical time step used by the RK4 solver. Smaller steps are more accurate but produce more data points."
+          changed={ch(st.dt, reference.settings.dt)}
+          onChange={(v) => update({ settings: { ...st, dt: v } })}
+          tooltip="Integration step of the fourth-order Runge–Kutta solver. Smaller is more accurate."
         />
-      </Section>
+      </Group>
     </div>
   )
 }

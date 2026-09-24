@@ -7,3 +7,8 @@ dist
 # Local assistant notes
 CLAUDE.md
 .claude
+
+# Design review captures (local)
+.impeccable/review/
+.impeccable/build/
+.impeccable/mocks/

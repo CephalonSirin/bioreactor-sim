@@ -81,16 +81,15 @@ function Liquid({ flow }: { flow: boolean }) {
       },
       ...common,
     })
-    const meniscusMat = new THREE.MeshBasicMaterial({ color: '#cff7ef', transparent: true, opacity: 0.35, depthWrite: false })
+    const meniscusMat = new THREE.MeshBasicMaterial({ color: '#5d676d', transparent: true, opacity: 0.35, depthWrite: false })
     const jetGeo = new THREE.RingGeometry(0.34, 0.95, 64, 1)
     jetGeo.rotateX(-Math.PI / 2)
     const jetMat = new THREE.ShaderMaterial({
       vertexShader: UV_VERT,
       fragmentShader: JET_FRAG,
-      uniforms: { uTime: { value: 0 }, uAmt: { value: 0 }, uColor: { value: new THREE.Color('#9fe8dc') } },
+      uniforms: { uTime: { value: 0 }, uAmt: { value: 0 }, uColor: { value: new THREE.Color('#ffffff') } },
       transparent: true,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
     })
     return { body, surface, bodyMat, surfaceMat, meniscusMat, jetGeo, jetMat }

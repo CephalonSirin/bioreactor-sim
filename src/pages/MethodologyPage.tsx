@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { EquationBlock } from '../components/ui/Eq'
 import { renderMath } from '../components/ui/mathText'
-import Reveal from '../components/ui/Reveal'
+import Segmented from '../components/ui/Segmented'
 import { ASSUMPTIONS, DERIVED_EQUATIONS, MASS_BALANCES, RATE_LAWS, REFERENCES, VARIABLES } from '../content/equations'
 import type { VariableDef } from '../content/equations'
 import type { ReactorType } from '../simulation/types'
@@ -11,23 +11,23 @@ const varBySymbol = new Map<string, VariableDef>(VARIABLES.map((v) => [v.symbol,
 function VarTable({ symbols }: { symbols: string[] }) {
   const rows = symbols.map((s) => varBySymbol.get(s)).filter((v): v is VariableDef => !!v)
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[520px] text-left text-[13px]">
+    <div className="my-5 overflow-x-auto">
+      <table className="data-table min-w-[560px]">
         <thead>
-          <tr className="border-b border-ink-600 font-mono text-[10px] uppercase tracking-wider text-dim">
-            <th className="py-1.5 pr-3 font-normal">Symbol</th>
-            <th className="py-1.5 pr-3 font-normal">Quantity</th>
-            <th className="py-1.5 pr-3 font-normal">Unit</th>
-            <th className="py-1.5 font-normal">Meaning</th>
+          <tr>
+            <th scope="col" className="w-20">Symbol</th>
+            <th scope="col" className="w-[30%]">Quantity</th>
+            <th scope="col" className="w-28">Unit</th>
+            <th scope="col">Meaning</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((v) => (
-            <tr key={v.symbol} className="border-b border-ink-700/60 align-top">
-              <td className="math py-2 pr-3 text-base text-aqua">{renderMath(v.symbol)}</td>
-              <td className="py-2 pr-3 text-paper">{v.name}</td>
-              <td className="py-2 pr-3 font-mono text-xs text-muted">{v.unit}</td>
-              <td className="py-2 text-muted">{renderMath(v.meaning)}</td>
+            <tr key={v.symbol}>
+              <td className="math text-[1.05rem] text-ink">{renderMath(v.symbol)}</td>
+              <td className="text-ink">{v.name}</td>
+              <td className="font-mono text-label text-ink-2">{v.unit}</td>
+              <td className="text-ink-2">{renderMath(v.meaning)}</td>
             </tr>
           ))}
         </tbody>
@@ -36,194 +36,245 @@ function VarTable({ symbols }: { symbols: string[] }) {
   )
 }
 
-function Card({ id, eyebrow, title, children }: { id: string; eyebrow: string; title: string; children: React.ReactNode }) {
+const SECTIONS = [
+  { id: 'state', title: 'State variables' },
+  { id: 'rates', title: 'Rate laws' },
+  { id: 'balances', title: 'Mass balances' },
+  { id: 'derived', title: 'Derived results' },
+  { id: 'numerics', title: 'Numerical method' },
+  { id: 'visuals', title: 'Reading the vessel' },
+  { id: 'assumptions', title: 'Assumptions and limits' },
+  { id: 'symbols', title: 'Symbol table' },
+  { id: 'references', title: 'References' },
+]
+
+function Section({ n, id, title, children }: { n: number; id: string; title: string; children: React.ReactNode }) {
   return (
-    <Reveal>
-      <section id={id} className="glass scroll-mt-24 p-5 sm:p-7" aria-labelledby={`${id}-h`}>
-        <div className="eyebrow">{eyebrow}</div>
-        <h2 id={`${id}-h`} className="mb-4 mt-1 font-display text-2xl font-semibold">
-          {title}
-        </h2>
-        {children}
-      </section>
-    </Reveal>
+    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-[calc(var(--nav-h)+24px)] border-b border-line py-12 first:pt-2 last:border-b-0">
+      <h2 id={`${id}-h`} className="t-section mb-5 flex items-baseline gap-4">
+        <span className="num font-mono text-label font-normal text-ink-4">§{n}</span>
+        {title}
+      </h2>
+      {children}
+    </section>
   )
 }
 
 const Meaning = ({ children }: { children: React.ReactNode }) => (
-  <p className="mt-2 border-l-2 border-ink-500 pl-3 text-sm leading-relaxed text-muted">
-    <span className="font-mono text-[10px] uppercase tracking-wider text-aqua">Physical meaning </span>
+  <p className="mt-4 max-w-prose border-l border-line-strong pl-4 text-ui leading-relaxed text-ink-2">
+    <span className="font-medium text-ink">Physical meaning. </span>
     {children}
   </p>
 )
 
-const MODES: { id: ReactorType; label: string }[] = [
-  { id: 'batch', label: 'Batch' },
-  { id: 'fedbatch', label: 'Fed-batch' },
-  { id: 'cstr', label: 'CSTR' },
+const Sub = ({ children }: { children: React.ReactNode }) => <h3 className="t-sub mb-1 mt-10 first:mt-0">{children}</h3>
+
+const MODES: { value: ReactorType; label: string }[] = [
+  { value: 'batch', label: 'Batch' },
+  { value: 'fedbatch', label: 'Fed-batch' },
+  { value: 'cstr', label: 'CSTR' },
 ]
 
 const VISUAL_MAP: [string, string][] = [
-  ['Liquid level', 'Working volume V (fed-batch rises; batch and CSTR constant)'],
-  ['Liquid colour and amber cells', 'Biomass X, on the absolute scale 1 − e^(−X/3) so a dilute culture stays clear'],
-  ['Teal dots', 'Substrate S, relative to its peak in the run'],
-  ['Coral dots', 'Product P, relative to its peak in the run'],
-  ['Extra bubbles', 'Growth activity μX, relative to its peak (metabolic gas). A baseline of aeration bubbles is always drawn'],
-  ['Feed and outflow lines', 'Feed flow F (fed-batch) or D·V (CSTR); their speed and thickness scale with the flow'],
-  ['Feed bottle level', 'Fed volume so far, V − V₀'],
-  ['“Washout” badge', 'Biomass below 5% of its peak after the peak, in a CSTR'],
+  ['Liquid level', 'Working volume V. Rises in fed-batch; constant in batch and CSTR.'],
+  ['Broth colour and ochre particles', 'Biomass X on the absolute scale 1 − e^(−X/3), so a dilute culture stays clear. Particle density is a cue, not a cell count.'],
+  ['Blue dots', 'Substrate S, relative to its peak in the run.'],
+  ['Rings', 'Product P, relative to its peak in the run.'],
+  ['Bubbles', 'Illustrative only: a constant aeration rate plus extra gas scaled by growth activity μX. Oxygen transfer is not modelled.'],
+  ['Probes and head plate', 'Context only. pH, dissolved oxygen and temperature are not simulated.'],
+  ['Feed and effluent lines', 'Feed flow F (fed-batch) or D·V (CSTR). Pump speed and pulses follow the flow.'],
+  ['Feed and harvest bottles', 'Fed volume so far (V − V₀), or medium used and effluent collected in a CSTR.'],
+  ['Washout notice', 'Shown when biomass falls below 5% of its peak after the peak, in a CSTR.'],
 ]
+
+const SCOPE = ['Educational', 'Simplified', 'Deterministic', 'Ideal mixing', 'Single limiting substrate', 'Not an industrial process model']
 
 export default function MethodologyPage() {
   const [mode, setMode] = useState<ReactorType>('batch')
+  const [active, setActive] = useState('state')
   const set = MASS_BALANCES[mode]
 
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
+        if (hit) setActive(hit.target.id)
+      },
+      { rootMargin: '-20% 0px -65% 0px' }
+    )
+    SECTIONS.forEach((s) => {
+      const el = document.getElementById(s.id)
+      if (el) io.observe(el)
+    })
+    return () => io.disconnect()
+  }, [])
+
   return (
-    <div className="mx-auto max-w-[980px] px-4 pb-8 pt-10 sm:px-6">
-      <header className="mb-8">
-        <div className="eyebrow">About · Methodology</div>
-        <h1 className="mt-2 font-display text-4xl font-semibold sm:text-5xl">How the model works</h1>
-        <p className="mt-3 text-base leading-relaxed text-muted">
-          Everything on this site is computed from the equations on this page. The notation, units and assumptions below match the code that runs the simulation.
-        </p>
-        <ul className="mt-4 flex flex-wrap gap-2" aria-label="Model scope">
-          {['Educational', 'Simplified', 'Deterministic', 'Idealised mass balances', 'Single limiting substrate', 'Not an industrial process simulator'].map((t) => (
-            <li key={t} className="rounded-full border border-aqua/40 bg-aqua/5 px-3 py-1 font-mono text-[11px] text-aqua">
+    <div className="mx-auto max-w-page px-4 pb-10 pt-12 sm:px-6 lg:pt-16">
+      <header className="border-b border-ink pb-10">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+          <h1 className="t-page max-w-[14ch]">Methodology</h1>
+          <p className="max-w-prose text-body text-ink-2">
+            Everything on this site is computed from the equations below. Notation, units and assumptions match the code in <code className="font-mono text-ui text-ink">src/simulation/</code>.
+          </p>
+        </div>
+        <p className="mt-6 flex flex-wrap gap-x-3 gap-y-1 text-label text-ink-3">
+          <span className="font-medium text-ink-2">Scope</span>
+          {SCOPE.map((t, i) => (
+            <span key={t} className="flex items-center gap-3">
+              {i > 0 && <span aria-hidden="true">·</span>}
               {t}
-            </li>
+            </span>
           ))}
-        </ul>
+        </p>
       </header>
 
-      <div className="flex flex-col gap-6">
-        <Card id="state" eyebrow="1 · State variables" title="What is being simulated">
-          <p className="mb-3 text-[15px] leading-relaxed text-paper/90">
-            At every instant the reactor is described by four numbers: biomass <em>X</em>, substrate <em>S</em>, product <em>P</em> and volume <em>V</em>. Each reactor mode gives one differential equation per variable, a mass balance, and the solver advances them together through time.
-          </p>
-          <VarTable symbols={['X', 'S', 'P', 'V']} />
-        </Card>
-
-        <Card id="rates" eyebrow="2 · Rate laws" title="Growth, product formation and substrate uptake">
-          <h3 className="mb-1 font-display text-lg font-semibold">Monod growth</h3>
-          <EquationBlock lines={[RATE_LAWS.monod]} accent="#9fd18a" label="Monod equation" />
-          <VarTable symbols={['μ', 'μ_{max}', 'K_{s}', 'S']} />
-          <Meaning>
-            {renderMath(
-              'Growth is limited by the amount of substrate available, and saturates at μ_{max} because the cell’s uptake machinery has a finite capacity. At S = K_{s}, the culture grows at half its maximum rate.'
-            )}
-          </Meaning>
-
-          <h3 className="mb-1 mt-8 font-display text-lg font-semibold">Luedeking–Piret product formation</h3>
-          <EquationBlock lines={[RATE_LAWS.product]} accent="#f0805f" label="Luedeking-Piret equation" />
-          <VarTable symbols={['q_{p}', 'α', 'β', 'μ']} />
-          <Meaning>Product forms partly in proportion to growth (α μ) and partly in proportion to biomass regardless of growth (β), covering primary and secondary metabolites.</Meaning>
-
-          <h3 className="mb-1 mt-8 font-display text-lg font-semibold">Substrate uptake</h3>
-          <EquationBlock lines={[RATE_LAWS.uptake]} accent="#46e0c8" label="Substrate uptake" />
-          <VarTable symbols={['q_{S}', 'Y_{x/s}', 'Y_{p/s}', 'm_{s}']} />
-          <Meaning>
-            Substrate is spent on three things: building biomass, making product, and keeping cells alive. The sum, per gram of biomass per hour, drives the substrate balance in every reactor mode.
-          </Meaning>
-        </Card>
-
-        <Card id="balances" eyebrow="3 · Mass balances" title="One set of equations per reactor mode">
-          <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Reactor mode">
-            {MODES.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                aria-pressed={mode === m.id}
-                onClick={() => setMode(m.id)}
-                className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
-                  mode === m.id ? 'border-aqua bg-aqua/15 text-aqua' : 'border-ink-500 text-muted hover:border-aqua/60 hover:text-paper'
-                }`}
-              >
-                {m.label}
-              </button>
+      <div className="grid gap-12 pt-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <nav aria-label="Sections" className="hidden lg:block">
+          <ol className="sticky top-[calc(var(--nav-h)+32px)]">
+            {SECTIONS.map((s, i) => (
+              <li key={s.id}>
+                <a
+                  href={`#/methodology`}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }}
+                  aria-current={active === s.id ? 'location' : undefined}
+                  className={`flex items-baseline gap-3 border-l py-1.5 pl-4 text-ui transition-colors duration-200 ${active === s.id ? 'border-ink font-medium text-ink' : 'border-line text-ink-3 hover:text-ink'}`}
+                >
+                  <span className="num w-5 font-mono text-micro font-normal text-ink-4">§{i + 1}</span>
+                  {s.title}
+                </a>
+              </li>
             ))}
-          </div>
-          <h3 className="font-display text-lg font-semibold">{set.title}</h3>
-          <p className="text-sm text-muted">{set.summary}</p>
-          <EquationBlock lines={set.lines} label={`${set.title} mass balances`} />
-          <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-muted">
-            {set.meaning.map((m, i) => (
-              <li key={i}>{renderMath(m)}</li>
-            ))}
-          </ul>
-          <div className="mt-4">
-            <VarTable symbols={mode === 'batch' ? ['k_{d}'] : mode === 'fedbatch' ? ['F', 'D', 'S_{f}', 'k_{d}'] : ['D', 'S_{f}', 'k_{d}']} />
-          </div>
-        </Card>
+          </ol>
+        </nav>
 
-        <Card id="derived" eyebrow="4 · Derived results" title="Washout, steady state, yield and productivity">
-          <div className="flex flex-col gap-6">
-            {DERIVED_EQUATIONS.map((d) => (
+        <div className="min-w-0 max-w-[860px]">
+          <Section n={1} id="state" title="State variables">
+            <p className="max-w-prose text-body leading-[1.7] text-ink-2">
+              At every instant the reactor is described by four numbers: biomass <span className="math">X</span>, substrate <span className="math">S</span>, product <span className="math">P</span> and volume <span className="math">V</span>. Each reactor mode gives one differential equation per variable, a mass balance, and the solver advances them together.
+            </p>
+            <VarTable symbols={['X', 'S', 'P', 'V']} />
+          </Section>
+
+          <Section n={2} id="rates" title="Rate laws">
+            <Sub>Monod growth</Sub>
+            <EquationBlock lines={[RATE_LAWS.monod]} number={1} label="Monod equation" />
+            <VarTable symbols={['μ', 'μ_{max}', 'K_{s}', 'S']} />
+            <Meaning>
+              {renderMath(
+                'Growth is limited by the substrate available and saturates at μ_{max}, because the uptake machinery has a finite capacity. At S = K_{s} the culture grows at half its maximum rate.'
+              )}
+            </Meaning>
+
+            <Sub>Luedeking–Piret product formation</Sub>
+            <EquationBlock lines={[RATE_LAWS.product]} number={2} label="Luedeking-Piret equation" />
+            <VarTable symbols={['q_{p}', 'α', 'β', 'μ']} />
+            <Meaning>Product forms partly in proportion to growth (α μ) and partly in proportion to biomass regardless of growth (β), covering primary and secondary metabolites.</Meaning>
+
+            <Sub>Substrate uptake</Sub>
+            <EquationBlock lines={[RATE_LAWS.uptake]} number={3} label="Substrate uptake" />
+            <VarTable symbols={['q_{S}', 'Y_{x/s}', 'Y_{p/s}', 'm_{s}']} />
+            <Meaning>Substrate is spent on three things: building biomass, making product and keeping cells alive. Their sum, per gram of biomass per hour, drives the substrate balance in every mode.</Meaning>
+          </Section>
+
+          <Section n={3} id="balances" title="Mass balances">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-ui text-ink-2">{set.summary}</p>
+              <Segmented value={mode} options={MODES} onChange={setMode} label="Reactor mode" />
+            </div>
+            <div key={mode} className="pop-in">
+              <EquationBlock lines={set.lines} number={mode === 'fedbatch' ? '4a–e' : '4a–d'} label={`${set.title} mass balances`} />
+              <ul className="max-w-prose space-y-2 text-ui leading-relaxed text-ink-2">
+                {set.meaning.map((m, i) => (
+                  <li key={i} className="flex gap-3">
+                    <span className="mt-[9px] h-px w-3 shrink-0 bg-ink-3" aria-hidden="true" />
+                    <span>{renderMath(m)}</span>
+                  </li>
+                ))}
+              </ul>
+              <VarTable symbols={mode === 'batch' ? ['k_{d}'] : mode === 'fedbatch' ? ['F', 'D', 'S_{f}', 'k_{d}'] : ['D', 'S_{f}', 'k_{d}']} />
+            </div>
+          </Section>
+
+          <Section n={4} id="derived" title="Derived results">
+            {DERIVED_EQUATIONS.map((d, i) => (
               <div key={d.id}>
-                <h3 className="font-display text-lg font-semibold">{d.title}</h3>
-                <EquationBlock lines={d.lines} accent="#8fa6e8" label={d.title} />
+                <Sub>{d.title}</Sub>
+                <EquationBlock lines={d.lines} number={5 + i} label={d.title} />
                 <Meaning>{renderMath(d.meaning)}</Meaning>
               </div>
             ))}
-          </div>
-        </Card>
+          </Section>
 
-        <Card id="numerics" eyebrow="5 · Numerical method" title="Fourth-order Runge–Kutta integration">
-          <p className="mb-2 text-[15px] leading-relaxed text-paper/90">
-            The four balances form a system of ordinary differential equations dy/dt = f(y) with y = (X, S, P, V). They are integrated with the classical fourth-order Runge–Kutta method, which is accurate for the nonlinear Monod term without needing tiny time steps.
-          </p>
-          <EquationBlock
-            lines={[
-              'y_{n+1} = y_{n} + (Δt / 6)(k_{1} + 2 k_{2} + 2 k_{3} + k_{4})',
-              'k_{1} = f(y_{n}),  k_{2} = f(y_{n} + Δt k_{1} / 2)',
-              'k_{3} = f(y_{n} + Δt k_{2} / 2),  k_{4} = f(y_{n} + Δt k_{3})',
-            ]}
-            label="Runge-Kutta 4"
-          />
-          <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-muted">
-            <li>The whole trajectory is computed up front and then played back, so playback speed and frame rate never change the numbers.</li>
-            <li>Concentrations and volume are kept non-negative after each step, and substrate is clamped at zero inside the rate laws.</li>
-            <li>Every step is checked for NaN or infinite values; if one appears the run stops with an explanation instead of drawing bad data.</li>
-            <li>Inputs are validated, sliders are range-limited, and the Lab warns when a time step is coarse or a CSTR is at or above D_crit.</li>
-            <li>Check: with the Stable CSTR experiment the simulation converges to the analytical steady state X*, S*, P* shown above.</li>
-          </ul>
-        </Card>
+          <Section n={5} id="numerics" title="Numerical method">
+            <p className="max-w-prose text-body leading-[1.7] text-ink-2">
+              The four balances form a system of ordinary differential equations <span className="math">dy/dt = f(y)</span> with <span className="math">y = (X, S, P, V)</span>. They are integrated with the classical fourth-order Runge–Kutta method, accurate for the nonlinear Monod term without tiny steps.
+            </p>
+            <EquationBlock
+              lines={['y_{n+1} = y_{n} + (Δt / 6)(k_{1} + 2 k_{2} + 2 k_{3} + k_{4})', 'k_{1} = f(y_{n}),  k_{2} = f(y_{n} + Δt k_{1} / 2)', 'k_{3} = f(y_{n} + Δt k_{2} / 2),  k_{4} = f(y_{n} + Δt k_{3})']}
+              number={8}
+              label="Runge-Kutta 4"
+            />
+            <ul className="max-w-prose space-y-2 text-ui leading-relaxed text-ink-2">
+              {[
+                'The whole trajectory is computed once and then played back, so playback speed and frame rate never change the numbers.',
+                'Concentrations and volume are kept non-negative after each step, and substrate is clamped at zero inside the rate laws.',
+                'Every step is checked for NaN or infinite values; if one appears the run stops with an explanation instead of drawing bad data.',
+                'Inputs are range-limited, and the Lab warns when a time step is coarse or a CSTR is at or above D_crit.',
+                'Check: the Stable CSTR experiment converges to the analytical steady state X*, S*, P* of equation (6).',
+              ].map((t) => (
+                <li key={t} className="flex gap-3">
+                  <span className="mt-[9px] h-px w-3 shrink-0 bg-ink-3" aria-hidden="true" />
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ul>
+          </Section>
 
-        <Card id="visuals" eyebrow="6 · Reading the animation" title="What each visual element shows">
-          <p className="mb-3 text-sm leading-relaxed text-muted">
-            The reactor drawing is not decoration: each element is driven by the simulated state at the current playback time. Its geometry is schematic and not to scale, and the impeller speed is a fixed operating setting.
-          </p>
-          <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[minmax(0,220px)_1fr]">
-            {VISUAL_MAP.map(([k, v]) => (
-              <div key={k} className="contents">
-                <dt className="font-medium text-aqua">{k}</dt>
-                <dd className="mb-2 text-muted sm:mb-0">{v}</dd>
-              </div>
-            ))}
-          </dl>
-        </Card>
+          <Section n={6} id="visuals" title="Reading the vessel">
+            <p className="max-w-prose text-body leading-[1.7] text-ink-2">
+              Each element of the 3D vessel is driven by the simulated state at the playback time, except where marked illustrative. Geometry is schematic and not to scale, and the impeller speed is a fixed operating setting.
+            </p>
+            <dl className="mt-6 border-t border-line">
+              {VISUAL_MAP.map(([k, v]) => (
+                <div key={k} className="grid gap-1 border-b border-line py-3 sm:grid-cols-[220px_1fr] sm:gap-6">
+                  <dt className="text-ui font-medium text-ink">{k}</dt>
+                  <dd className="text-ui text-ink-2">{renderMath(v)}</dd>
+                </div>
+              ))}
+            </dl>
+          </Section>
 
-        <Card id="assumptions" eyebrow="7 · Scope" title="Assumptions and limitations">
-          <ul className="flex flex-col gap-2">
-            {ASSUMPTIONS.map((a) => (
-              <li key={a} className="flex gap-2.5 text-[15px] leading-relaxed text-paper/90">
-                <span className="mt-2.5 h-1 w-3 shrink-0 rounded-full bg-aqua" aria-hidden="true" />
-                {a}
-              </li>
-            ))}
-          </ul>
-        </Card>
+          <Section n={7} id="assumptions" title="Assumptions and limits">
+            <ol className="max-w-prose space-y-3">
+              {ASSUMPTIONS.map((a, i) => (
+                <li key={a} className="grid grid-cols-[2rem_1fr] text-body leading-relaxed text-ink-2">
+                  <span className="num pt-[3px] font-mono text-label text-ink-4">{i + 1}.</span>
+                  <span>{a}</span>
+                </li>
+              ))}
+            </ol>
+          </Section>
 
-        <Card id="symbols" eyebrow="8 · Reference" title="Full symbol table">
-          <VarTable symbols={VARIABLES.map((v) => v.symbol)} />
-        </Card>
+          <Section n={8} id="symbols" title="Symbol table">
+            <VarTable symbols={VARIABLES.map((v) => v.symbol)} />
+          </Section>
 
-        <Card id="references" eyebrow="9 · Further reading" title="References">
-          <ul className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-muted">
-            {REFERENCES.map((r) => (
-              <li key={r}>{r}</li>
-            ))}
-          </ul>
-        </Card>
+          <Section n={9} id="references" title="References">
+            <ol className="max-w-prose space-y-3">
+              {REFERENCES.map((r, i) => (
+                <li key={r} className="grid grid-cols-[2rem_1fr] text-ui leading-relaxed text-ink-2">
+                  <span className="num font-mono text-label text-ink-4">[{i + 1}]</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ol>
+          </Section>
+        </div>
       </div>
     </div>
   )

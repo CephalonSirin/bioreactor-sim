@@ -1,11 +1,15 @@
 import { memo, useMemo, useRef, useState } from 'react'
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Download } from 'lucide-react'
 import { downloadSvgAsPng } from '../../lib/exportImage'
 import { niceAxis } from '../../lib/axis'
+import { FONT, INK } from '../../lib/palette'
 
 export interface SeriesDef {
   key: string
   name: string
+  /** Math symbol shown in the key and tooltip. */
+  symbol?: string
   color: string
   unit: string
 }
@@ -22,6 +26,7 @@ export interface RefLineDef {
 }
 
 interface SeriesChartProps {
+  figure: string
   title: string
   yLabel: string
   series: SeriesDef[]
@@ -36,11 +41,22 @@ interface SeriesChartProps {
   refLines?: RefLineDef[]
   height?: number
   fileBase: string
+  /** One-line description of what is plotted. */
+  caption?: string
+  /** Vertical event markers (time, label), shown once playback reaches them. */
+  events?: { t: number; label: string }[]
 }
 
-const AXIS = { fontSize: 11, fill: '#8ea3a3', fontFamily: 'IBM Plex Mono, monospace' }
+const TICK = { fontSize: 11, fill: INK[3], fontFamily: FONT.mono }
+const AXIS_LABEL = { fontSize: 11, fill: INK[3], fontFamily: FONT.sans }
 
+/**
+ * One figure: a line chart drawn progressively as the run plays, with the
+ * newest point marked like a pen tip. Series identity is carried by the
+ * key (line swatch + name), never by coloured text.
+ */
 function SeriesChart({
+  figure,
   title,
   yLabel,
   series,
@@ -53,6 +69,8 @@ function SeriesChart({
   refLines,
   height = 250,
   fileBase,
+  caption,
+  events,
 }: SeriesChartProps) {
   const box = useRef<HTMLDivElement>(null)
   const [exportError, setExportError] = useState<string | null>(null)
@@ -75,6 +93,12 @@ function SeriesChart({
 
   const data = useMemo(() => rows.slice(0, Math.max(count, 1)), [rows, count])
   const xTicks = useMemo(() => niceAxis(duration, 6).ticks.filter((t) => t <= duration + 1e-9), [duration])
+  const last = data.length - 1
+  const tipDot = (color: string) =>
+    function Tip(props: { cx?: number; cy?: number; index?: number }) {
+      if (props.index !== last || props.cx === undefined || props.cy === undefined) return <g key={props.index} />
+      return <circle key="tip" cx={props.cx} cy={props.cy} r={3.5} fill="#fff" stroke={color} strokeWidth={2} />
+    }
 
   const handleDownload = async () => {
     const svg = box.current?.querySelector('svg.recharts-surface') as SVGSVGElement | null
@@ -82,7 +106,7 @@ function SeriesChart({
     try {
       setExportError(null)
       await downloadSvgAsPng(svg, `${fileBase}_${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`, {
-        caption: `${title} — Bioreactor Lab (educational model)`,
+        caption: `${figure}. ${title}. Bioreactor Lab (educational model)`,
       })
     } catch (e) {
       setExportError(e instanceof Error ? e.message : 'Image export failed.')
@@ -90,98 +114,113 @@ function SeriesChart({
   }
 
   return (
-    <figure className="glass p-4" aria-label={title}>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <figcaption className="font-display text-sm font-semibold text-paper">{title}</figcaption>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {series.map((s) => {
-            const on = visibleKeys.has(s.key)
-            return (
-              <button
-                key={s.key}
-                type="button"
-                aria-pressed={on}
-                onClick={() => onToggle(s.key)}
-                className="flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px] transition-colors"
-                style={{
-                  borderColor: on ? s.color : '#34525a',
-                  color: on ? s.color : '#8ea3a3',
-                  backgroundColor: on ? `${s.color}1a` : 'transparent',
-                }}
-              >
-                <span className="h-1.5 w-3 rounded-full" style={{ backgroundColor: on ? s.color : '#34525a' }} />
-                {s.name}
-              </button>
-            )
-          })}
-          <button type="button" onClick={handleDownload} className="rounded border border-ink-500 px-2 py-0.5 font-mono text-[11px] text-muted hover:border-aqua hover:text-aqua" title="Download this chart as a PNG image">
-            PNG
+    <figure className="flex min-w-0 flex-col" aria-label={`${figure}: ${title}`}>
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <figcaption className="min-w-0">
+          <span className="flex items-baseline gap-2 text-ui font-semibold text-ink">
+            <span className="font-mono text-label font-normal text-ink-3">{figure}</span>
+            {title}
+          </span>
+          {caption && <span className="mt-0.5 block text-label text-ink-3">{caption}</span>}
+        </figcaption>
+        <div className="flex flex-wrap items-center gap-1">
+          {series.length > 1 &&
+            series.map((s) => {
+              const on = visibleKeys.has(s.key)
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => onToggle(s.key)}
+                  className={`flex h-7 items-center gap-1.5 rounded-md px-2 text-label transition-[color,background-color,opacity] duration-150 hover:bg-sunken ${on ? 'text-ink-2' : 'text-ink-4'}`}
+                  title={on ? `Hide ${s.name}` : `Show ${s.name}`}
+                >
+                  <span className="swatch transition-opacity duration-150" style={{ color: s.color, opacity: on ? 1 : 0.3 }} aria-hidden="true" />
+                  <span className={on ? '' : 'line-through decoration-ink-4'}>{s.name}</span>
+                </button>
+              )
+            })}
+          <button type="button" onClick={handleDownload} className="icon-btn !h-7 !w-7" aria-label={`Download ${title} as PNG`} title="Download PNG">
+            <Download className="!h-3.5 !w-3.5" aria-hidden="true" />
           </button>
         </div>
       </div>
-      <div ref={box}>
+      <div ref={box} className="-ml-2">
         <ResponsiveContainer width="100%" height={height}>
-          <LineChart data={data} margin={{ top: 6, right: 14, left: 0, bottom: 14 }}>
-            <CartesianGrid stroke="rgba(120,200,192,0.10)" strokeDasharray="2 4" />
+          <LineChart data={data} margin={{ top: 8, right: 16, left: 4, bottom: 18 }}>
+            <CartesianGrid stroke="#ECECE8" vertical={false} />
             <XAxis
               type="number"
               dataKey="t"
               domain={[0, duration]}
               ticks={xTicks}
-              stroke="#34525a"
-              tick={AXIS}
+              stroke={INK.lineStrong}
+              tickLine={{ stroke: INK.lineStrong }}
+              tick={TICK}
               tickFormatter={(v: number) => String(Math.round(v * 10) / 10)}
-              label={{ value: 'Time (h)', position: 'insideBottom', offset: -8, ...AXIS }}
+              label={{ value: 'Time (h)', position: 'insideBottom', offset: -12, ...AXIS_LABEL }}
             />
             <YAxis
               type="number"
               domain={[0, axis.max]}
               ticks={axis.ticks}
-              stroke="#34525a"
-              tick={AXIS}
-              width={52}
+              axisLine={false}
+              tickLine={false}
+              tick={TICK}
+              width={50}
               tickFormatter={(v: number) => String(Math.round(v * 1000) / 1000)}
-              label={{ value: yLabel, angle: -90, position: 'insideLeft', offset: 10, dx: -8, ...AXIS }}
+              label={{ value: yLabel, angle: -90, position: 'insideLeft', offset: 14, dx: -6, ...AXIS_LABEL }}
             />
             <Tooltip
-              cursor={{ stroke: '#46e0c8', strokeOpacity: 0.4 }}
+              cursor={{ stroke: INK[3], strokeWidth: 1, strokeDasharray: '3 3' }}
+              isAnimationActive={false}
               content={({ active: isActive, payload }) => {
                 if (!isActive || !payload?.length) return null
                 const row = payload[0].payload as ChartRow
                 return (
-                  <div className="rounded-md border border-ink-500 bg-ink-900/95 px-3 py-2 font-mono text-[11px] shadow-glass">
-                    <div className="mb-1 text-muted">t = {row.t.toFixed(2)} h</div>
+                  <div className="min-w-[180px] rounded-md border border-line bg-surface px-3 py-2 text-label shadow-pop">
+                    <div className="num mb-1.5 font-mono text-micro text-ink-3">t = {row.t.toFixed(2)} h</div>
                     {active.map((s) => (
-                      <div key={s.key} className="flex items-center gap-2" style={{ color: s.color }}>
-                        <span className="inline-block h-1.5 w-3 rounded-full" style={{ background: s.color }} />
-                        <span className="flex-1">{s.name}</span>
-                        <span>
-                          {row[s.key] !== undefined ? row[s.key]!.toFixed(3) : '—'} {s.unit}
-                        </span>
+                      <div key={s.key} className="flex items-center gap-2 py-0.5">
+                        <span className="swatch" style={{ color: s.color }} />
+                        <span className="flex-1 text-ink-2">{s.name}</span>
+                        <span className="num font-mono text-ink">{row[s.key] !== undefined ? row[s.key]!.toFixed(3) : '—'}</span>
+                        <span className="w-7 font-mono text-micro text-ink-3">{s.unit}</span>
                       </div>
                     ))}
                     {baselineLabel &&
                       active.map((s) => (
-                        <div key={`b${s.key}`} className="flex items-center gap-2 text-muted">
-                          <span className="inline-block h-0 w-3 border-t border-dashed" style={{ borderColor: s.color }} />
-                          <span className="flex-1">{s.name} · {baselineLabel}</span>
-                          <span>
-                            {row[`b_${s.key}`] !== undefined ? row[`b_${s.key}`]!.toFixed(3) : '—'} {s.unit}
-                          </span>
+                        <div key={`b${s.key}`} className="flex items-center gap-2 py-0.5">
+                          <span className="swatch swatch-dashed" style={{ color: s.color }} />
+                          <span className="flex-1 text-ink-3">{s.name}, baseline</span>
+                          <span className="num font-mono text-ink-2">{row[`b_${s.key}`] !== undefined ? row[`b_${s.key}`]!.toFixed(3) : '—'}</span>
+                          <span className="w-7 font-mono text-micro text-ink-3">{s.unit}</span>
                         </div>
                       ))}
                   </div>
                 )
               }}
             />
+            {events
+              ?.filter((ev) => ev.t <= (data[last]?.t ?? 0))
+              .map((ev) => (
+                <ReferenceLine
+                  key={ev.label}
+                  x={ev.t}
+                  stroke={INK[3]}
+                  strokeDasharray="2 3"
+                  label={{ value: ev.label, position: 'insideTopLeft', fill: INK[2], fontSize: 11, fontFamily: FONT.sans, dx: 4 }}
+                />
+              ))}
             {refLines?.map((l) => (
               <ReferenceLine
                 key={l.label}
                 y={l.y}
                 stroke={l.color}
-                strokeDasharray="6 4"
-                strokeOpacity={0.6}
-                label={{ value: l.label, position: 'insideTopRight', fill: l.color, fontSize: 10, fontFamily: 'IBM Plex Mono, monospace' }}
+                strokeDasharray="2 3"
+                strokeOpacity={0.9}
+                label={{ value: l.label, position: 'insideTopRight', fill: INK[2], fontSize: 11, fontFamily: FONT.mono }}
               />
             ))}
             {baselineLabel &&
@@ -192,10 +231,11 @@ function SeriesChart({
                   dataKey={`b_${s.key}`}
                   name={`${s.name} (${baselineLabel})`}
                   stroke={s.color}
-                  strokeOpacity={0.5}
+                  strokeOpacity={0.55}
                   strokeDasharray="5 4"
-                  strokeWidth={1.6}
+                  strokeWidth={1.5}
                   dot={false}
+                  activeDot={false}
                   isAnimationActive={false}
                   connectNulls
                 />
@@ -207,17 +247,17 @@ function SeriesChart({
                 dataKey={s.key}
                 name={s.name}
                 stroke={s.color}
-                strokeWidth={2.2}
-                dot={false}
+                strokeWidth={2}
+                dot={tipDot(s.color)}
+                activeDot={{ r: 4, stroke: '#fff', strokeWidth: 2, fill: s.color }}
                 isAnimationActive={false}
               />
             ))}
           </LineChart>
         </ResponsiveContainer>
       </div>
-      {baselineLabel && <p className="mt-1 text-[11px] text-dim">Dashed lines: saved baseline “{baselineLabel}” (clipped to this run’s duration).</p>}
       {exportError && (
-        <p role="alert" className="mt-1 text-[11px] text-readout-product">
+        <p role="alert" className="mt-1 text-label text-danger">
           {exportError}
         </p>
       )}

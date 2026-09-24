@@ -3,6 +3,7 @@ import { EquationBlock } from '../components/ui/Eq'
 import { LEARN_TOPICS } from '../content/topics'
 import type { LearnTopicId } from '../content/topics'
 import { RATE_LAWS } from '../content/equations'
+import { SERIES } from '../lib/palette'
 import { hrefFor } from '../hooks/useHashRoute'
 import {
   AnnotatedGraph,
@@ -16,7 +17,7 @@ import {
   YieldExplorer,
 } from '../components/learn/Interactives'
 
-const P = ({ children }: { children: React.ReactNode }) => <p className="mb-3 text-[15px] leading-relaxed text-paper/90">{children}</p>
+const P = ({ children }: { children: React.ReactNode }) => <p className="mb-4 max-w-prose text-body leading-[1.7] text-ink-2">{children}</p>
 
 const CONTENT: Record<LearnTopicId, React.ReactNode> = {
   bioreactor: (
@@ -49,7 +50,7 @@ const CONTENT: Record<LearnTopicId, React.ReactNode> = {
       <P>
         Substrate <em>S</em> is consumed for growth, for making product, and for maintenance (energy to stay alive). When it approaches zero, growth stops.
       </P>
-      <EquationBlock lines={[RATE_LAWS.uptake]} accent="#46e0c8" label="Substrate uptake" />
+      <EquationBlock lines={[RATE_LAWS.uptake]} number={1} label="Substrate uptake" />
       <P>
         Here <em>q</em>
         <sub>S</sub> is how much substrate one gram of biomass takes up per hour: growth uses <em>μ</em>/Y<sub>x/s</sub>, product uses <em>q</em>
@@ -64,7 +65,7 @@ const CONTENT: Record<LearnTopicId, React.ReactNode> = {
         Product is what the culture makes for us. Some products form only while cells grow (growth-associated, for example many primary metabolites such as ethanol or lactic acid). Others form mostly when growth has slowed (non-growth-associated, typical of many secondary metabolites such as antibiotics).
       </P>
       <P>The Luedeking–Piret equation covers both with two coefficients:</P>
-      <EquationBlock lines={[RATE_LAWS.product]} accent="#f0805f" label="Luedeking-Piret" />
+      <EquationBlock lines={[RATE_LAWS.product]} number={2} label="Luedeking-Piret" />
       <P>
         Here <em>α</em> ties product to growth and <em>β</em> ties it to the amount of biomass regardless of growth.
       </P>
@@ -76,7 +77,7 @@ const CONTENT: Record<LearnTopicId, React.ReactNode> = {
       <P>
         Growth rate depends on how much food there is. At very low substrate, cells grow slowly; as substrate rises, growth speeds up and then saturates: even unlimited food cannot make cells grow beyond a genetic maximum. This looks exactly like enzyme saturation kinetics, and Jacques Monod described it this way in 1949.
       </P>
-      <EquationBlock lines={[RATE_LAWS.monod]} accent="#9fd18a" label="Monod equation" />
+      <EquationBlock lines={[RATE_LAWS.monod]} number={3} label="Monod equation" />
       <P>
         <em>μ</em>
         <sub>max</sub> is the ceiling on growth rate. <em>K</em>
@@ -92,7 +93,7 @@ const CONTENT: Record<LearnTopicId, React.ReactNode> = {
         Yield says how efficiently substrate becomes something useful. The biomass yield <em>Y</em>
         <sub>x/s</sub> is the grams of cells formed per gram of substrate used. It is below 1 because much of the substrate is oxidised to supply energy (and released as CO₂ and heat).
       </P>
-      <EquationBlock lines={['Y_{x/s} = ΔX / (−ΔS)', 'Y_{p/s} = ΔP / (−ΔS)']} label="Yield definitions" />
+      <EquationBlock lines={['Y_{x/s} = ΔX / (−ΔS)', 'Y_{p/s} = ΔP / (−ΔS)']} number={4} label="Yield definitions" />
       <P>
         In the Lab, the yield shown live is the <em>realized</em> yield from whole-vessel mass balances, so it also reflects maintenance and product formation, which use substrate without making biomass.
       </P>
@@ -104,7 +105,7 @@ const CONTENT: Record<LearnTopicId, React.ReactNode> = {
       <P>
         In a continuous or fed-batch process, liquid flows through the vessel. The dilution rate is the flow rate divided by the volume: the fraction of the vessel replaced per hour. Its reciprocal is the average time a drop of liquid stays in the reactor.
       </P>
-      <EquationBlock lines={['D = F / V', 'τ = 1 / D']} label="Dilution rate" />
+      <EquationBlock lines={['D = F / V', 'τ = 1 / D']} number={5} label="Dilution rate" />
       <P>
         Anything dissolved or suspended in the liquid, including the cells, is carried out at rate <em>D</em> in a CSTR. In fed-batch nothing leaves, but the growing volume dilutes concentrations, and <em>D</em> = <em>F</em>/<em>V</em> falls with time.
       </P>
@@ -129,35 +130,35 @@ const CONTENT: Record<LearnTopicId, React.ReactNode> = {
         <sub>max</sub>. Eventually the vessel holds fresh medium and no cells: washout.
       </P>
       <P>There is a critical dilution rate above which this is inevitable. Below it, the culture settles at a steady state.</P>
-      <EquationBlock lines={['D_{crit} = μ_{max} S_{f} / (K_{s} + S_{f}) − k_{d}', 'steady state: μ = D + k_{d}']} accent="#f0805f" label="Critical dilution rate" />
+      <EquationBlock lines={['D_{crit} = μ_{max} S_{f} / (K_{s} + S_{f}) − k_{d}', 'μ* = D + k_{d}']} number={6} label="Critical dilution rate and steady state" />
       <WashoutExplorer />
       <P>
-        Try it in the Lab: the “Stable CSTR” and “CSTR Washout” experiments differ only in <em>D</em>. <a className="text-aqua hover:underline" href={hrefFor('experiments', 'cstr-washout')}>See the washout experiment →</a>
+        Try it in the Lab: the “Stable CSTR” and “CSTR Washout” experiments differ only in <em>D</em>. <a className="link" href={hrefFor('experiments', 'cstr-washout')}>See the washout experiment (E-08)</a>
       </P>
     </>
   ),
   graphs: (
     <>
       <P>
-        Every run produces the same three views. The reactor shows the physical picture, the metric cards show exact numbers at the current time, and the charts show the history.
+        Every run produces the same three views. The reactor shows the physical picture, the measurements panel shows exact values at the current time, and the charts show the history.
       </P>
-      <ul className="mb-3 list-disc space-y-1.5 pl-5 text-[15px] leading-relaxed text-paper/90">
+      <ul className="mb-4 max-w-prose space-y-2.5 text-body leading-relaxed text-ink-2">
         <li>
-          <strong className="text-readout-biomass">Biomass</strong> rises while there is substrate, then plateaus and slowly falls (death, or washout in a CSTR).
+          <strong className="font-semibold text-ink"><span className="swatch mr-2 -translate-y-[3px]" style={{ color: SERIES.X }} />Biomass</strong> rises while there is substrate, then plateaus and slowly falls (death, or washout in a CSTR).
         </li>
         <li>
-          <strong className="text-readout-substrate">Substrate</strong> falls as it is consumed. When it reaches zero, growth ends. In fed-batch and CSTR it is replenished by the feed.
+          <strong className="font-semibold text-ink"><span className="swatch mr-2 -translate-y-[3px]" style={{ color: SERIES.S }} />Substrate</strong> falls as it is consumed. When it reaches zero, growth ends. In fed-batch and CSTR it is replenished by the feed.
         </li>
         <li>
-          <strong className="text-readout-product">Product</strong> accumulates as long as there are cells, faster while growing if <em>α</em> &gt; 0.
+          <strong className="font-semibold text-ink"><span className="swatch mr-2 -translate-y-[3px]" style={{ color: SERIES.P }} />Product</strong> accumulates as long as there are cells, faster while growing if <em>α</em> &gt; 0.
         </li>
         <li>
-          <strong className="text-readout-growth">Growth rate</strong> falls from near <em>μ</em>
+          <strong className="font-semibold text-ink"><span className="swatch mr-2 -translate-y-[3px]" style={{ color: SERIES.mu }} />Growth rate</strong> falls from near <em>μ</em>
           <sub>max</sub> to zero as substrate becomes limiting. In a CSTR at steady state it settles at <em>D</em> + <em>k</em>
           <sub>d</sub>.
         </li>
         <li>
-          <strong className="text-readout-volume">Volume</strong> (fed-batch) rises linearly with the feed.
+          <strong className="font-semibold text-ink"><span className="swatch mr-2 -translate-y-[3px]" style={{ color: SERIES.V }} />Volume</strong> (fed-batch) rises linearly with the feed.
         </li>
       </ul>
       <AnnotatedGraph />
@@ -166,79 +167,87 @@ const CONTENT: Record<LearnTopicId, React.ReactNode> = {
 }
 
 export default function LearnPage({ section }: { section: string | null }) {
-  const [open, setOpen] = useState<Set<string>>(new Set(section ? [section] : ['bioreactor']))
+  const [active, setActive] = useState<string>(section ?? LEARN_TOPICS[0].id)
 
   useEffect(() => {
     if (!section) return
-    setOpen((prev) => new Set(prev).add(section))
     requestAnimationFrame(() => document.getElementById(section)?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }, [section])
 
-  const toggle = (id: string, isOpen: boolean) =>
-    setOpen((prev) => {
-      const next = new Set(prev)
-      if (isOpen) next.add(id)
-      else next.delete(id)
-      return next
+  // Track the chapter being read for the contents rail.
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
+        if (hit) setActive(hit.target.id)
+      },
+      { rootMargin: '-20% 0px -65% 0px' }
+    )
+    LEARN_TOPICS.forEach((t) => {
+      const el = document.getElementById(t.id)
+      if (el) io.observe(el)
     })
+    return () => io.disconnect()
+  }, [])
+
+  const activeIndex = LEARN_TOPICS.findIndex((t) => t.id === active)
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 pb-12 pt-10 sm:px-6">
-      <header className="mb-10 max-w-3xl">
-        <div className="eyebrow">Learn</div>
-        <h1 className="mt-2 font-display text-4xl font-semibold sm:text-5xl">The science, concept first</h1>
-        <p className="mt-3 text-base leading-relaxed text-muted">
-          Ten short topics at B.Sc. biotechnology level. Each explains the idea in words, then shows the equation, then lets you play with it. Open the topics you need.
+    <div className="mx-auto max-w-page px-4 pb-10 pt-12 sm:px-6 lg:pt-16">
+      <header className="grid gap-6 border-b border-ink pb-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end">
+        <h1 className="t-page max-w-[14ch]">Bioreactor kinetics, from first principles</h1>
+        <p className="max-w-prose text-body text-ink-2">
+          Ten short chapters at undergraduate level. Each states the idea in words, then gives the equation, then lets you change it. The equations are the ones the Lab integrates.
         </p>
-        <div className="mt-4 flex gap-2">
-          <button type="button" className="btn-ghost btn-sm" onClick={() => setOpen(new Set(LEARN_TOPICS.map((t) => t.id)))}>
-            Expand all
-          </button>
-          <button type="button" className="btn-ghost btn-sm" onClick={() => setOpen(new Set())}>
-            Collapse all
-          </button>
-        </div>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <nav aria-label="Topics" className="hidden lg:block">
-          <ol className="sticky top-24 flex flex-col gap-0.5 border-l border-ink-600">
-            {LEARN_TOPICS.map((t, i) => (
-              <li key={t.id}>
-                <a
-                  href={hrefFor('learn', t.id)}
-                  className={`-ml-px block border-l py-1.5 pl-4 text-sm transition-colors ${
-                    open.has(t.id) ? 'border-aqua text-paper' : 'border-transparent text-muted hover:text-paper'
-                  }`}
-                >
-                  <span className="mr-2 font-mono text-[11px] text-dim">{String(i + 1).padStart(2, '0')}</span>
-                  {t.title}
-                </a>
-              </li>
-            ))}
+      <div className="grid gap-12 pt-10 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_200px]">
+        <nav aria-label="Chapters" className="hidden lg:block">
+          <ol className="sticky top-[calc(var(--nav-h)+32px)] flex flex-col">
+            {LEARN_TOPICS.map((t, i) => {
+              const on = t.id === active
+              return (
+                <li key={t.id}>
+                  <a
+                    href={hrefFor('learn', t.id)}
+                    aria-current={on ? 'location' : undefined}
+                    className={`group flex items-baseline gap-3 border-l py-1.5 pl-4 text-ui transition-colors duration-200 ${
+                      on ? 'border-ink text-ink' : i < activeIndex ? 'border-ink-4 text-ink-3 hover:text-ink' : 'border-line text-ink-3 hover:text-ink'
+                    }`}
+                  >
+                    <span className="num w-4 font-mono text-micro text-ink-4">{i + 1}</span>
+                    <span className={on ? 'font-medium' : ''}>{t.title}</span>
+                  </a>
+                </li>
+              )
+            })}
           </ol>
         </nav>
 
-        <div className="flex flex-col gap-3">
+        <div className="min-w-0 [&_em]:font-math [&_em]:text-[1.08em]">
           {LEARN_TOPICS.map((t, i) => (
-            <details
-              key={t.id}
-              id={t.id}
-              open={open.has(t.id)}
-              onToggle={(e) => toggle(t.id, (e.currentTarget as HTMLDetailsElement).open)}
-              className="glass group scroll-mt-24"
-            >
-              <summary className="flex cursor-pointer items-center gap-4 px-5 py-4">
-                <span className="font-mono text-xs text-aqua">{String(i + 1).padStart(2, '0')}</span>
-                <h2 className="flex-1 font-display text-xl font-semibold">{t.title}</h2>
-                <span className="text-xl text-muted transition-transform duration-300 group-open:rotate-90" aria-hidden="true">
-                  ›
-                </span>
-              </summary>
-              <div className="border-t border-ink-600/70 px-5 pb-5 pt-4">{open.has(t.id) && CONTENT[t.id]}</div>
-            </details>
+            <section key={t.id} id={t.id} aria-labelledby={`${t.id}-h`} className="scroll-mt-[calc(var(--nav-h)+24px)] border-b border-line pb-14 pt-2 [&:not(:first-child)]:pt-12 last:border-b-0">
+              <div className="mb-6 flex items-baseline gap-4">
+                <span className="num font-mono text-label text-ink-4">{String(i + 1).padStart(2, '0')}</span>
+                <h2 id={`${t.id}-h`} className="t-section">
+                  {t.title}
+                </h2>
+              </div>
+              {CONTENT[t.id]}
+            </section>
           ))}
         </div>
+
+        <aside className="hidden xl:block" aria-label="In the Lab">
+          <div className="sticky top-[calc(var(--nav-h)+32px)] space-y-3 text-label text-ink-3">
+            <p className="font-medium text-ink-2">Try it in the Lab</p>
+            <p>Every chapter maps to a parameter you can change and run.</p>
+            <a href={hrefFor('lab')} className="btn-secondary btn-sm mt-1">
+              Open the Lab
+            </a>
+          </div>
+        </aside>
       </div>
     </div>
   )

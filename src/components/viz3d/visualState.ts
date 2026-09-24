@@ -61,8 +61,10 @@ export interface VisualSnapshot {
   flowOut: number
 }
 
-const MEDIUM: [number, number, number] = [0.3, 0.6, 0.58]
-const CULTURE: [number, number, number] = [0.84, 0.58, 0.18]
+// Fresh medium is a pale straw colour (as most complex media are); a dense
+// culture turns it an opaque ochre.
+const MEDIUM: [number, number, number] = [0.93, 0.9, 0.76]
+const CULTURE: [number, number, number] = [0.72, 0.5, 0.16]
 
 export const PHASE_LABEL: Record<CulturePhase, string> = {
   initial: 'Initial conditions',

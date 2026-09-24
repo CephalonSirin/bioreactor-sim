@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bioreactor Lab — Interactive Biotechnology Laboratory</title>
+    <title>Bioreactor Lab — Interactive bioprocess simulation</title>
     <meta
       name="description"
-      content="Run batch, fed-batch and CSTR bioreactors in your browser. An interactive teaching laboratory built on Monod kinetics and real mass balances, with an animated reactor, live charts, guided experiments and a classroom mode."
+      content="Simulate batch, fed-batch and continuous (CSTR) bioreactors in the browser. Monod kinetics, Luedeking–Piret product formation and per-mode mass balances, integrated with RK4 and shown as a 3D vessel, live measurements and charts."
     />
-    <meta name="theme-color" content="#050c0e" />
+    <meta name="theme-color" content="#F6F6F4" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="author" content="Bioreactor Lab" />
     <meta name="keywords" content="bioreactor, bioprocess, Monod kinetics, fed-batch, CSTR, washout, biotechnology education, simulation" />
@@ -23,7 +23,7 @@
     <meta property="og:image" content="%VITE_SITE_URL%/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="A bioreactor vessel beside the title Bioreactor Lab" />
+    <meta property="og:image:alt" content="Bioreactor Lab home page: the headline Watch a culture grow, starve or wash out beside a 3D stirred-tank vessel" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Bioreactor Lab — Interactive Biotechnology Laboratory" />
     <meta name="twitter:description" content="Batch, fed-batch and CSTR bioreactor simulations you can run in your browser." />
@@ -32,7 +32,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Red+Hat+Mono:wght@400;500&family=STIX+Two+Text:ital,wght@0,400;0,500;1,400;1,500&family=Schibsted+Grotesk:ital,wght@0,400..700;1,400&display=swap"
       rel="stylesheet"
     />
     <script type="application/ld+json">
@@ -48,6 +48,7 @@
     </script>
   </head>
   <body>
+    <script>document.documentElement.classList.add('js')</script>
     <noscript>Bioreactor Lab needs JavaScript to run the simulations. Please enable it in your browser.</noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

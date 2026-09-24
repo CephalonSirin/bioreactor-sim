@@ -1,219 +1,305 @@
-import { useEffect, useRef } from 'react'
+import { useMemo } from 'react'
+import { ArrowRight, ArrowUpRight } from 'lucide-react'
 import Hero from '../components/home/Hero'
 import Reveal from '../components/ui/Reveal'
-import ExperimentCard from '../components/experiments/ExperimentCard'
 import ReactorGlyph from '../components/viz/ReactorGlyph'
 import { MonodExplorer } from '../components/learn/Interactives'
 import { Eq } from '../components/ui/Eq'
-import { hrefFor } from '../hooks/useHashRoute'
-import { PRESETS, presetById } from '../simulation/presets'
+import { hrefFor, navigate } from '../hooks/useHashRoute'
+import { PRESETS } from '../simulation/presets'
 import type { Preset } from '../simulation/presets'
-import type { ReactorType } from '../simulation/types'
+import type { ReactorType, SimPoint } from '../simulation/types'
+import { getPresetPreview } from '../lib/presetPreview'
+import { SERIES } from '../lib/palette'
+import { EXPERIMENT_CODE } from '../content/experiments'
 
 interface HomePageProps {
   onLaunchReactor: (type: ReactorType) => void
   onRunPreset: (preset: Preset) => void
 }
 
-function CountUp({ to, suffix = '' }: { to: number; suffix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduce || typeof IntersectionObserver === 'undefined') {
-      el.textContent = `${to}${suffix}`
-      return
+function MiniFigure({ points, className = '', label }: { points: SimPoint[]; className?: string; label: string }) {
+  const d = useMemo(() => {
+    const W = 200
+    const H = 64
+    const tMax = points[points.length - 1]?.t || 1
+    const line = (key: 'X' | 'S' | 'P') => {
+      const max = Math.max(...points.map((p) => Math.max(p.X, p.S, p.P)), 1e-9)
+      return points.map((p, i) => `${i ? 'L' : 'M'}${((p.t / tMax) * W).toFixed(1)} ${(H - 3 - (p[key] / max) * (H - 8)).toFixed(1)}`).join(' ')
     }
-    let raf = 0
-    const io = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return
-      io.disconnect()
-      const start = performance.now()
-      const step = (now: number) => {
-        const k = Math.min((now - start) / 1200, 1)
-        el.textContent = `${Math.round((1 - Math.pow(1 - k, 3)) * to)}${suffix}`
-        if (k < 1) raf = requestAnimationFrame(step)
-      }
-      raf = requestAnimationFrame(step)
-    })
-    io.observe(el)
-    return () => {
-      io.disconnect()
-      cancelAnimationFrame(raf)
-    }
-  }, [to, suffix])
-  return <span ref={ref}>0{suffix}</span>
+    return { W, H, X: line('X'), S: line('S'), P: line('P') }
+  }, [points])
+  return (
+    <svg viewBox={`0 0 ${d.W} ${d.H}`} className={className} role="img" aria-label={label} preserveAspectRatio="none">
+      <line x1="0" x2={d.W} y1={d.H - 0.5} y2={d.H - 0.5} stroke="#CBCBC5" vectorEffect="non-scaling-stroke" />
+      <path d={d.S} fill="none" stroke={SERIES.S} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      <path d={d.P} fill="none" stroke={SERIES.P} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      <path d={d.X} fill="none" stroke={SERIES.X} strokeWidth="1.75" vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
 }
 
-const STATS = [
-  { to: 3, label: 'reactor modes', note: 'batch, fed-batch, CSTR' },
-  { to: 8, label: 'curated experiments', note: 'each with the science explained' },
-  { to: 4, label: 'coupled equations', note: 'biomass, substrate, product, volume' },
-  { to: 10, label: 'learning topics', note: 'concept, then equation, then play' },
+const MODES: { type: ReactorType; name: string; inflow: string; outflow: string; volume: string; behaviour: string; eq: string }[] = [
+  { type: 'batch', name: 'Batch', inflow: 'None', outflow: 'None', volume: 'Constant', behaviour: 'Grows until the substrate runs out, then stops.', eq: 'dS/dt = − q_{S} X' },
+  { type: 'fedbatch', name: 'Fed-batch', inflow: 'Feed at F', outflow: 'None', volume: 'Rises at F', behaviour: 'Feeding delays depletion and reaches higher cell mass.', eq: 'dV/dt = F' },
+  { type: 'cstr', name: 'CSTR', inflow: 'Feed at D·V', outflow: 'Culture at D·V', volume: 'Constant', behaviour: 'Settles to a steady state, or washes out above D_{crit}.', eq: 'μ* = D + k_{d}' },
 ]
-
-const MODES: { type: ReactorType; name: string; line: string; eq: string; text: string }[] = [
-  {
-    type: 'batch',
-    name: 'Batch',
-    line: 'Load it, close it, watch it.',
-    eq: 'dS/dt = − q_{S} X',
-    text: 'Substrate only falls. Growth is fast at first, then starves as the medium runs out.',
-  },
-  {
-    type: 'fedbatch',
-    name: 'Fed-batch',
-    line: 'Feed the culture what it can use.',
-    eq: 'dV/dt = F',
-    text: 'Fresh substrate is pumped in and the volume rises, delaying depletion and reaching higher cell densities.',
-  },
-  {
-    type: 'cstr',
-    name: 'CSTR',
-    line: 'Steady state, or washout.',
-    eq: 'D_{crit} = μ(S_{f}) − k_{d}',
-    text: 'Medium flows in and culture flows out. Below the critical dilution rate the culture stabilises; above it, it vanishes.',
-  },
-]
-
-const FEATURED = ['healthy-batch', 'controlled-fedbatch', 'stable-cstr', 'cstr-washout']
-  .map((id) => presetById(id))
-  .filter((p): p is Preset => !!p)
 
 export default function HomePage({ onLaunchReactor, onRunPreset }: HomePageProps) {
+  const healthy = getPresetPreview(PRESETS[0])
+
+  const open = (type: ReactorType) => {
+    onLaunchReactor(type)
+    navigate('lab')
+  }
+  const run = (p: Preset) => {
+    onRunPreset(p)
+    navigate('lab')
+  }
+
   return (
     <div>
       <Hero />
 
-      {/* Stats ribbon */}
-      <section aria-label="At a glance" className="border-y border-ink-600/60 bg-ink-900/50">
-        <dl className="mx-auto grid max-w-[1360px] grid-cols-2 gap-y-6 px-4 py-8 sm:px-6 lg:grid-cols-4">
-          {STATS.map((s, i) => (
-            <Reveal key={s.label} delay={i * 90}>
-              <div className="border-l border-ink-600 pl-4">
-                <dd className="font-display text-4xl font-semibold text-paper">
-                  <CountUp to={s.to} />
-                </dd>
-                <dt className="mt-1 font-mono text-[11px] uppercase tracking-wider text-aqua">{s.label}</dt>
-                <dd className="mt-1 text-xs text-muted">{s.note}</dd>
-              </div>
-            </Reveal>
-          ))}
-        </dl>
-      </section>
-
-      {/* Three reactor modes */}
-      <section className="mx-auto max-w-[1360px] px-4 pt-24 sm:px-6" aria-labelledby="modes-h">
-        <Reveal>
-          <div className="eyebrow">Three ways to run a culture</div>
-          <h2 id="modes-h" className="mt-2 max-w-3xl font-display text-3xl font-semibold sm:text-5xl">
-            One organism. Three reactor designs. Very different outcomes.
+      {/* Process -> model -> experiment -> results */}
+      <section className="mx-auto max-w-page px-4 pt-24 sm:px-6 lg:pt-32" aria-labelledby="flow-h">
+        <Reveal className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end">
+          <h2 id="flow-h" className="t-section max-w-[18ch]">
+            From a vessel to a figure, in four steps you can inspect.
           </h2>
+          <p className="max-w-prose text-body text-ink-2 lg:justify-self-end">
+            Every run follows the same path. Nothing on screen is an animation for its own sake: the vessel, the numbers and the charts are all read from the trajectory the solver writes.
+          </p>
         </Reveal>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {MODES.map((m, i) => (
-            <Reveal key={m.type} delay={i * 100}>
-              <article className="glass frame flex h-full flex-col p-6">
-                <ReactorGlyph type={m.type} className="mb-4 h-28 w-36" />
-                <h3 className="font-display text-2xl font-semibold">{m.name}</h3>
-                <p className="mt-1 text-sm font-medium text-aqua">{m.line}</p>
-                <p className="mt-3 text-sm leading-relaxed text-muted">{m.text}</p>
-                <div className="well mt-4 px-3 py-2 text-center text-lg text-paper">
-                  <Eq>{m.eq}</Eq>
+
+        <ol className="mt-14 grid border-t border-ink sm:grid-cols-2 lg:grid-cols-4">
+          <Reveal as="li" className="flex flex-col border-b border-line py-7 sm:pr-8 lg:border-b-0 lg:border-r">
+            <div className="flex h-24 items-end gap-3 text-ink-2">
+              {(['batch', 'fedbatch', 'cstr'] as ReactorType[]).map((t) => (
+                <ReactorGlyph key={t} type={t} className="h-16 w-20" title={`${t} schematic`} />
+              ))}
+            </div>
+            <h3 className="t-sub mt-6">
+              Process
+              <span className="block text-ui font-normal text-ink-3">Choose a configuration</span>
+            </h3>
+            <p className="mt-2 text-ui leading-relaxed text-ink-3">Batch, fed-batch or continuous. The choice decides what crosses the vessel boundary.</p>
+          </Reveal>
+          <Reveal as="li" delay={70} className="flex flex-col border-b border-line py-7 sm:pl-8 lg:border-b-0 lg:border-r lg:px-8">
+            <div className="flex h-24 flex-col justify-end gap-1 text-ink">
+              <Eq className="text-[1.2rem]">{'μ = μ_{max} S / (K_{s} + S)'}</Eq>
+              <Eq className="text-[1.2rem]">{'dX/dt = (μ − k_{d} − D) X'}</Eq>
+            </div>
+            <h3 className="t-sub mt-6">
+              Model
+              <span className="block text-ui font-normal text-ink-3">Write the balances</span>
+            </h3>
+            <p className="mt-2 text-ui leading-relaxed text-ink-3">Monod growth, Luedeking–Piret product formation and one mass balance per state variable.</p>
+          </Reveal>
+          <Reveal as="li" delay={140} className="flex flex-col border-b border-line py-7 sm:pr-8 lg:border-b-0 lg:border-r lg:px-8">
+            <dl className="grid h-24 grid-cols-[auto_1fr] content-end gap-x-4 gap-y-1 font-mono text-label">
+              {[
+                ['μmax', '0.40 h⁻¹'],
+                ['Ks', '0.50 g/L'],
+                ['S₀', '10.0 g/L'],
+                ['X₀', '0.10 g/L'],
+              ].map(([k, v]) => (
+                <div key={k} className="contents">
+                  <dt className="text-ink-3">{k}</dt>
+                  <dd className="num text-right text-ink">{v}</dd>
                 </div>
-                <div className="mt-auto pt-5">
-                  <a
-                    href={hrefFor('lab')}
-                    onClick={() => onLaunchReactor(m.type)}
-                    className="btn-ghost btn-sm"
-                  >
-                    Open {m.name} in the Lab →
-                  </a>
-                </div>
-              </article>
-            </Reveal>
-          ))}
-        </div>
+              ))}
+            </dl>
+            <h3 className="t-sub mt-6">
+              Experiment
+              <span className="block text-ui font-normal text-ink-3">Set the conditions</span>
+            </h3>
+            <p className="mt-2 text-ui leading-relaxed text-ink-3">Kinetic constants, initial state, feed and run length, each with its unit and range.</p>
+          </Reveal>
+          <Reveal as="li" delay={210} className="flex flex-col py-7 sm:pl-8 lg:pl-8">
+            <div className="flex h-24 items-end">{healthy && <MiniFigure points={healthy.points} className="h-20 w-full" label="Biomass, substrate and product of the default batch run" />}</div>
+            <h3 className="t-sub mt-6">
+              Results
+              <span className="block text-ui font-normal text-ink-3">Read the trajectory</span>
+            </h3>
+            <p className="mt-2 text-ui leading-relaxed text-ink-3">RK4 integrates the run once; playback, figures and exports all read the same result.</p>
+          </Reveal>
+        </ol>
       </section>
 
-      {/* How the lab works */}
-      <section className="mx-auto max-w-[1360px] px-4 pt-28 sm:px-6" aria-labelledby="how-h">
-        <div className="grid items-start gap-10 lg:grid-cols-[1fr_1.1fr]">
-          <Reveal>
-            <div className="eyebrow">One trajectory, three views</div>
-            <h2 id="how-h" className="mt-2 font-display text-3xl font-semibold sm:text-4xl">
-              The vessel, the numbers and the graphs are the same data.
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-muted">
-              Every run is computed once with a fourth-order Runge–Kutta solver and then played back. The liquid level, the turbidity of the culture, the metric cards and the charts all read from the same trajectory, so nothing on screen is decoration.
-            </p>
-            <ul className="mt-6 space-y-3 text-sm">
-              {[
-                ['Fed-batch volume rises', 'you see the liquid level climb and the feed bottle empty.'],
-                ['Biomass grows', 'the medium darkens and fills with cells.'],
-                ['CSTR washes out', 'the vessel clears and a warning appears.'],
-              ].map(([a, b]) => (
-                <li key={a} className="flex gap-3">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-aqua" aria-hidden="true" />
-                  <span>
-                    <span className="font-medium text-paper">{a}: </span>
-                    <span className="text-muted">{b}</span>
-                  </span>
-                </li>
+      {/* Three configurations */}
+      <section className="mx-auto max-w-page px-4 pt-24 sm:px-6 lg:pt-32" aria-labelledby="modes-h">
+        <Reveal className="max-w-2xl">
+          <h2 id="modes-h" className="t-section">
+            Same organism, three reactors, three different outcomes.
+          </h2>
+          <p className="mt-4 text-body text-ink-2">The kinetics never change between modes. Only the terms for flow and volume do, and that is enough to decide whether a culture starves, keeps growing or settles.</p>
+        </Reveal>
+        <Reveal className="mt-10 border-t border-ink md:hidden">
+          <ul>
+            {MODES.map((m) => (
+              <li key={m.type} className="border-b border-line py-5">
+                <button type="button" onClick={() => open(m.type)} className="flex w-full items-center gap-4 text-left">
+                  <ReactorGlyph type={m.type} className="h-12 w-16 shrink-0 text-ink-2" />
+                  <span className="flex-1 text-[17px] font-semibold text-ink">{m.name}</span>
+                  <ArrowUpRight className="h-4 w-4 text-ink-3" aria-hidden="true" />
+                </button>
+                <dl className="mt-3 grid grid-cols-[5rem_1fr] gap-y-1 text-ui">
+                  <dt className="text-ink-3">In</dt>
+                  <dd className="text-ink-2">{m.inflow}</dd>
+                  <dt className="text-ink-3">Out</dt>
+                  <dd className="text-ink-2">{m.outflow}</dd>
+                  <dt className="text-ink-3">Volume</dt>
+                  <dd className="text-ink-2">{m.volume}</dd>
+                </dl>
+                <p className="mt-2 text-ui text-ink-2">
+                  <Eq className="!not-italic !font-sans">{m.behaviour}</Eq>
+                </p>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+        <Reveal className="mt-10 hidden overflow-x-auto md:block">
+          <table className="w-full min-w-[760px] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-ink text-label text-ink-3">
+                <th scope="col" className="w-[26%] pb-3 font-medium">Configuration</th>
+                <th scope="col" className="pb-3 font-medium">In</th>
+                <th scope="col" className="pb-3 font-medium">Out</th>
+                <th scope="col" className="pb-3 font-medium">Volume</th>
+                <th scope="col" className="w-[28%] pb-3 font-medium">Typical behaviour</th>
+                <th scope="col" className="pb-3 font-medium">Defining relation</th>
+                <th scope="col" className="pb-3">
+                  <span className="sr-only">Open</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {MODES.map((m) => (
+                <tr key={m.type} className="group border-b border-line align-middle transition-colors duration-150 hover:bg-surface">
+                  <th scope="row" className="py-5 pr-4 font-normal">
+                    <button type="button" onClick={() => open(m.type)} className="flex items-center gap-4 text-left">
+                      <ReactorGlyph type={m.type} className="h-12 w-16 shrink-0 text-ink-2 transition-colors group-hover:text-ink" />
+                      <span className="text-[17px] font-semibold tracking-[-0.01em] text-ink">{m.name}</span>
+                    </button>
+                  </th>
+                  <td className="py-5 pr-4 text-ui text-ink-2">{m.inflow}</td>
+                  <td className="py-5 pr-4 text-ui text-ink-2">{m.outflow}</td>
+                  <td className="py-5 pr-4 text-ui text-ink-2">{m.volume}</td>
+                  <td className="py-5 pr-4 text-ui text-ink-2">
+                    <Eq className="!not-italic !font-sans">{m.behaviour}</Eq>
+                  </td>
+                  <td className="py-5 pr-4 text-[1.1rem] text-ink">
+                    <Eq>{m.eq}</Eq>
+                  </td>
+                  <td className="py-5 text-right">
+                    <button type="button" onClick={() => open(m.type)} className="btn-ghost btn-sm text-ink-2" aria-label={`Open ${m.name} in the Lab`}>
+                      Open
+                      <ArrowUpRight className="!h-3.5 !w-3.5 transition-transform duration-200 ease-out group-hover:-translate-y-px group-hover:translate-x-px" aria-hidden="true" />
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </ul>
-            <a href={hrefFor('methodology')} className="mt-6 inline-block font-mono text-sm text-aqua hover:underline">
-              Read the methodology →
+            </tbody>
+          </table>
+        </Reveal>
+      </section>
+
+      {/* The Monod curve, live */}
+      <section className="mx-auto max-w-page px-4 pt-24 sm:px-6 lg:pt-32" aria-labelledby="monod-h">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+          <Reveal>
+            <h2 id="monod-h" className="t-section max-w-[16ch]">
+              Growth depends on food, until it doesn’t.
+            </h2>
+            <div className="prose-body mt-5 max-w-prose">
+              <p>
+                At low substrate the culture grows slowly; as substrate rises, growth speeds up and then saturates at a maximum set by the organism. Jacques Monod described it this way in 1949, and it is the growth law every run here uses.
+              </p>
+              <p>Move the sliders to see how the two constants shape the curve.</p>
+            </div>
+            <a href={hrefFor('learn', 'monod')} className="link mt-6 inline-flex items-center gap-1 text-ui">
+              Monod kinetics in Learn <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </a>
           </Reveal>
-          <Reveal delay={120}>
+          <Reveal delay={80}>
             <MonodExplorer />
           </Reveal>
         </div>
       </section>
 
-      {/* Experiments teaser */}
-      <section className="mx-auto max-w-[1360px] px-4 pt-28 sm:px-6" aria-labelledby="exp-h">
-        <Reveal>
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <div className="eyebrow">Experiment gallery</div>
-              <h2 id="exp-h" className="mt-2 font-display text-3xl font-semibold sm:text-4xl">
-                Start with a scenario
-              </h2>
-            </div>
-            <a href={hrefFor('experiments')} className="btn-ghost btn-sm">
-              All {PRESETS.length} experiments →
-            </a>
-          </div>
+      {/* Experiment index */}
+      <section className="mx-auto max-w-page px-4 pt-24 sm:px-6 lg:pt-32" aria-labelledby="exp-h">
+        <Reveal className="flex flex-wrap items-end justify-between gap-4">
+          <h2 id="exp-h" className="t-section">
+            Eight prepared experiments
+          </h2>
+          <a href={hrefFor('experiments')} className="link inline-flex items-center gap-1 text-ui">
+            Experiment archive <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
         </Reveal>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {FEATURED.map((p, i) => (
-            <Reveal key={p.id} delay={i * 80}>
-              <ExperimentCard preset={p} compact onRun={(preset) => { onRunPreset(preset); window.location.hash = hrefFor('lab') }} />
-            </Reveal>
-          ))}
-        </div>
+        <Reveal as="div" className="mt-8 border-t border-ink">
+          <ul className="grid sm:grid-cols-2">
+            {PRESETS.map((p, i) => {
+              const prev = getPresetPreview(p)
+              return (
+                <li key={p.id} className={`border-b border-line ${i % 2 === 0 ? 'sm:border-r sm:pr-6' : 'sm:pl-6'}`}>
+                  <button type="button" onClick={() => run(p)} className="group grid w-full grid-cols-[3rem_1fr_7rem] items-center gap-4 py-4 text-left">
+                    <span className="num font-mono text-label text-ink-3">{EXPERIMENT_CODE[p.id]}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[15px] font-medium text-ink">{p.label}</span>
+                      <span className="block truncate text-label text-ink-3">{p.description}</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      {prev && <MiniFigure points={prev.points} className="h-8 w-full opacity-80 transition-opacity group-hover:opacity-100" label={`Preview of ${p.label}`} />}
+                      <ArrowRight className="h-4 w-4 shrink-0 -translate-x-1 text-ink-3 opacity-0 transition-[opacity,transform] duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </Reveal>
       </section>
 
-      {/* Closing CTA */}
-      <section className="mx-auto max-w-[1360px] px-4 pt-28 sm:px-6" aria-labelledby="cta-h">
-        <Reveal>
-          <div className="glass frame relative overflow-hidden px-6 py-14 text-center sm:px-12">
-            <div className="absolute inset-0 -z-10 opacity-60" style={{ background: 'radial-gradient(60% 90% at 50% 0%, rgba(70,224,200,0.18), transparent 70%)' }} aria-hidden="true" />
-            <h2 id="cta-h" className="mx-auto max-w-2xl font-display text-3xl font-semibold sm:text-5xl">
-              Ready to run your first experiment?
+      {/* Scope */}
+      <section className="mx-auto max-w-page px-4 pt-24 sm:px-6 lg:pt-32" aria-labelledby="scope-h">
+        <Reveal className="grid gap-10 border-t border-ink pt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+          <div>
+            <h2 id="scope-h" className="t-section">
+              What the model is, and is not.
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-muted">No installation and no sign-up. It runs entirely in your browser, and it is built to be projected in a classroom.</p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <a href={hrefFor('lab')} className="btn-primary px-6 py-3 text-base">
-                Enter the Bioreactor Lab
+            <p className="mt-4 text-ui leading-relaxed text-ink-3">A teaching model: deterministic, perfectly mixed, one limiting substrate. The full list of assumptions is in the methodology.</p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              <a href={hrefFor('lab')} className="btn-primary">
+                Open the Lab
               </a>
-              <a href={hrefFor('learn')} className="btn-ghost px-6 py-3 text-base">
-                Explore the Science
+              <a href={hrefFor('methodology')} className="btn-secondary">
+                Methodology
               </a>
             </div>
+          </div>
+          <div>
+            <h3 className="t-label mb-3 text-ink-2">Simulated</h3>
+            <ul className="space-y-2 text-ui text-ink-2">
+              {['Biomass, substrate, product and volume', 'Monod growth with maintenance and death', 'Luedeking–Piret product formation', 'Feed, dilution and washout', 'Analytical CSTR steady state as a check'].map((t) => (
+                <li key={t} className="flex gap-2.5">
+                  <span className="mt-[9px] h-px w-3 shrink-0 bg-ink" aria-hidden="true" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="t-label mb-3 text-ink-2">Not simulated</h3>
+            <ul className="space-y-2 text-ui text-ink-3">
+              {['Oxygen transfer and dissolved oxygen', 'pH, temperature and CO₂', 'Substrate or product inhibition', 'Lag phase and cell-to-cell variation', 'Mixing gradients and shear'].map((t) => (
+                <li key={t} className="flex gap-2.5">
+                  <span className="mt-[9px] h-px w-3 shrink-0 bg-ink-4" aria-hidden="true" />
+                  {t}
+                </li>
+              ))}
+            </ul>
           </div>
         </Reveal>
       </section>

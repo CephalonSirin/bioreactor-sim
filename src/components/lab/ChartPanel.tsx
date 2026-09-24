@@ -3,6 +3,7 @@ import SeriesChart from './SeriesChart'
 import type { ChartRow, RefLineDef, SeriesDef } from './SeriesChart'
 import { cstrSteadyState } from '../../simulation/kinetics'
 import type { ReactorConfig, SimPoint } from '../../simulation/types'
+import { SERIES } from '../../lib/palette'
 
 interface ChartPanelProps {
   /** Full downsampled trajectory of the current run. */
@@ -17,12 +18,12 @@ interface ChartPanelProps {
 }
 
 const CONCENTRATION: SeriesDef[] = [
-  { key: 'X', name: 'Biomass', color: '#f0b545', unit: 'g/L' },
-  { key: 'S', name: 'Substrate', color: '#46e0c8', unit: 'g/L' },
-  { key: 'P', name: 'Product', color: '#f0805f', unit: 'g/L' },
+  { key: 'X', name: 'Biomass', color: SERIES.X, unit: 'g/L' },
+  { key: 'S', name: 'Substrate', color: SERIES.S, unit: 'g/L' },
+  { key: 'P', name: 'Product', color: SERIES.P, unit: 'g/L' },
 ]
-const RATE: SeriesDef[] = [{ key: 'mu', name: 'Growth rate μ', color: '#9fd18a', unit: 'h⁻¹' }]
-const VOLUME: SeriesDef[] = [{ key: 'V', name: 'Volume', color: '#8fa6e8', unit: 'L' }]
+const RATE: SeriesDef[] = [{ key: 'mu', name: 'Growth rate', color: SERIES.mu, unit: 'h⁻¹' }]
+const VOLUME: SeriesDef[] = [{ key: 'V', name: 'Volume', color: SERIES.V, unit: 'L' }]
 
 const KEYS = ['X', 'S', 'P', 'V', 'mu'] as const
 
@@ -111,41 +112,61 @@ function ChartPanel({ chartPoints, baselinePoints, baselineLabel, config, playba
   const rows = useMemo(() => buildRows(chartPoints, baselinePoints), [chartPoints, baselinePoints])
   const duration = chartPoints.length ? chartPoints[chartPoints.length - 1].t : (config?.settings.duration ?? 1)
   const count = chartIndex + 1
-  const height = tall ? 320 : 250
+  const height = tall ? 340 : 270
 
   const concRefs = useMemo<RefLineDef[] | undefined>(() => {
     if (!config || config.reactorType !== 'cstr') return undefined
     const ss = cstrSteadyState(config.cstr.D, config.cstr.Sf, config.kinetics)
     if (!ss) return undefined
     return [
-      { y: ss.X, label: `X* = ${ss.X.toFixed(2)}`, color: '#f0b545' },
-      { y: ss.P, label: `P* = ${ss.P.toFixed(2)}`, color: '#f0805f' },
+      { y: ss.X, label: `X* = ${ss.X.toFixed(2)}`, color: SERIES.X },
+      { y: ss.P, label: `P* = ${ss.P.toFixed(2)}`, color: SERIES.P },
     ]
   }, [config])
 
   const rateRefs = useMemo<RefLineDef[] | undefined>(() => {
     if (!config) return undefined
-    const refs: RefLineDef[] = [{ y: config.kinetics.muMax, label: 'μmax', color: '#9fd18a' }]
-    if (config.reactorType === 'cstr') refs.push({ y: config.cstr.D + config.kinetics.kd, label: 'D + kd', color: '#8fa6e8' })
+    const refs: RefLineDef[] = [{ y: config.kinetics.muMax, label: 'μmax', color: SERIES.mu }]
+    if (config.reactorType === 'cstr') refs.push({ y: config.cstr.D + config.kinetics.kd, label: 'D + kd', color: SERIES.V })
     return refs
   }, [config])
 
+  // Events worth marking on the time axis, found from the data.
+  const events = useMemo(() => {
+    const out: { t: number; label: string }[] = []
+    if (!config || chartPoints.length < 2) return out
+    if (config.reactorType !== 'cstr') {
+      const start = chartPoints[0].S
+      const hit = chartPoints.find((p, i) => i > 0 && p.S < Math.max(0.05, start * 0.005))
+      if (hit && start > 0.05) out.push({ t: hit.t, label: 'S depleted' })
+    } else {
+      const peak = chartPoints.reduce((m, p) => (p.X > m.X ? p : m), chartPoints[0])
+      const gone = chartPoints.find((p) => p.t > peak.t && p.X < 0.05 * peak.X)
+      if (gone) out.push({ t: gone.t, label: 'Washout' })
+    }
+    return out
+  }, [chartPoints, config])
+
   if (chartPoints.length === 0) {
     return (
-      <div ref={setBox} className="glass flex min-h-[220px] items-center justify-center p-8 text-center text-sm text-muted" role="status">
-        The charts appear here once you run the experiment. They share one timeline with the reactor and the metric cards.
+      <div ref={setBox} className="flex min-h-[200px] flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line-strong px-6 py-10 text-center" role="status">
+        <p className="text-ui font-medium text-ink-2">No run yet</p>
+        <p className="max-w-sm text-label text-ink-3">Run the simulation to draw the figures. They share one timeline with the vessel and the measurements.</p>
       </div>
     )
   }
 
   const common = { rows, count, duration, baselineLabel, height, fileBase }
+  const third = config?.reactorType === 'fedbatch'
   return (
-    <div ref={setBox} className={`grid grid-cols-1 gap-4 ${tall ? 'xl:grid-cols-2' : '2xl:grid-cols-2'}`}>
-      <SeriesChart {...common} title="Concentrations" yLabel="g/L" series={CONCENTRATION} visibleKeys={visConc} onToggle={toggleConc} refLines={concRefs} />
-      <SeriesChart {...common} title="Specific growth rate" yLabel="h⁻¹" series={RATE} visibleKeys={visRate} onToggle={toggleRate} refLines={rateRefs} />
-      {config?.reactorType === 'fedbatch' && (
-        <SeriesChart {...common} title="Reactor volume" yLabel="L" series={VOLUME} visibleKeys={visVol} onToggle={toggleVol} />
-      )}
+    <div ref={setBox} className={`grid grid-cols-1 gap-x-10 gap-y-10 ${tall ? 'xl:grid-cols-2' : 'xl:grid-cols-2'}`}>
+      <div className={third ? '' : 'xl:col-span-2'}>
+        <SeriesChart {...common} figure="Fig. 1" title="Concentrations" yLabel="Concentration (g/L)" series={CONCENTRATION} visibleKeys={visConc} onToggle={toggleConc} refLines={concRefs} events={events} caption={config?.reactorType === 'cstr' ? 'X, S and P against time. Dashed: analytical steady state.' : 'X, S and P against time, drawn up to the playback time.'} height={third ? height : height + 30} />
+      </div>
+      {third && <SeriesChart {...common} figure="Fig. 2" title="Working volume" yLabel="Volume (L)" series={VOLUME} visibleKeys={visVol} onToggle={toggleVol} caption="Working volume, rising at the feed rate F." />}
+      <div className={third ? 'xl:col-span-2' : 'xl:col-span-2'}>
+        <SeriesChart {...common} figure={third ? 'Fig. 3' : 'Fig. 2'} title="Specific growth rate" yLabel="μ (h⁻¹)" series={RATE} visibleKeys={visRate} onToggle={toggleRate} refLines={rateRefs} events={events} caption={config?.reactorType === 'cstr' ? 'μ against time. At steady state μ settles at D + kd.' : 'μ against time. Dotted: μmax.'} height={Math.round(height * 0.72)} />
+      </div>
     </div>
   )
 }

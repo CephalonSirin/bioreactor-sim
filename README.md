@@ -4,15 +4,15 @@
 
 **Watch a culture grow, starve, or wash out.**
 
-An interactive teaching laboratory for bioprocess kinetics. Run batch, fed-batch and continuous (CSTR) bioreactors in your browser, and watch a 3D vessel, live metrics and charts respond to the same simulated state.
+An interactive bioprocess simulator for teaching. Run batch, fed-batch and continuous (CSTR) bioreactors in your browser, and watch a 3D vessel, live measurements and figures respond to the same simulated state.
 
-[![Live demo](https://img.shields.io/badge/live_demo-open_the_lab-46e0c8?style=for-the-badge&labelColor=050c0e)](https://cephalonsirin.github.io/bioreactor-sim/)
-[![Deploy](https://img.shields.io/github/actions/workflow/status/CephalonSirin/bioreactor-sim/deploy.yml?branch=main&style=for-the-badge&label=deploy&labelColor=050c0e)](https://github.com/CephalonSirin/bioreactor-sim/actions/workflows/deploy.yml)
+[![Live demo](https://img.shields.io/badge/live_demo-open_the_lab-17191C?style=for-the-badge&labelColor=0E6B63)](https://cephalonsirin.github.io/bioreactor-sim/)
+[![Deploy](https://img.shields.io/github/actions/workflow/status/CephalonSirin/bioreactor-sim/deploy.yml?branch=main&style=for-the-badge&label=deploy&labelColor=0E6B63)](https://github.com/CephalonSirin/bioreactor-sim/actions/workflows/deploy.yml)
 
 <br />
 
 <a href="https://cephalonsirin.github.io/bioreactor-sim/">
-  <img src="public/og-image.png" alt="Bioreactor Lab: a bioreactor vessel beside the title" width="720" />
+  <img src="public/og-image.png" alt="Bioreactor Lab home page with the 3D vessel" width="720" />
 </a>
 
 </div>
@@ -25,12 +25,12 @@ An interactive teaching laboratory for bioprocess kinetics. Run batch, fed-batch
 
 | | |
 |---|---|
-| **3D reactor** | A WebGL stirred tank: turbidity and amber cells track biomass, teal glow tracks substrate, coral rings track product, gas follows aeration plus growth activity, and feed and harvest lines run at the simulated flow. Orbit, zoom, and toggle visual layers. Falls back to an SVG drawing without WebGL 2. |
+| **3D reactor** | A WebGL stirred tank on a daylight bench: broth colour and ochre particles track biomass, blue dots substrate, rings product, and feed and harvest lines run at the simulated flow. Bubbles and probes are marked as illustrative (oxygen, pH and temperature are not modelled). Orbit, zoom and toggle layers. Falls back to an SVG drawing without WebGL 2. |
 | **Three reactor modes** | Batch, fed-batch and CSTR, with parameter validation and advisories (for example when `D` exceeds the critical dilution rate). |
-| **Live playback** | Run, pause, resume, reset, 1–20× speed and a scrubbable timeline. Reactor, 8 metric cards and charts always show the same trajectory point. |
-| **8 guided experiments** | Healthy Batch Growth, Substrate Limited, Fast Growth, High Feed Fed-Batch, Controlled Fed-Batch, Low Feed, Stable CSTR and CSTR Washout. Overlay any two to compare. |
+| **Live playback** | Run, pause, resume, reset, 1–20× speed and a scrubbable timeline that previews the run. Vessel, measurements and figures always show the same trajectory point. |
+| **Experiment archive** | Eight numbered experiments (E-01 to E-08), each with its objective, the parameters it varies, the mechanism and the expected observation. Overlay any two to compare. |
 | **Learn and Methodology** | Ten concept-first topics with interactive explainers (Monod curve, Luedeking–Piret, yield, dilution rate, washout), plus every equation with variables, units and assumptions. |
-| **Classroom mode** | Press `P` for a larger reactor, numbers and charts. `Space` plays or pauses, `R` re-runs, `Esc` exits. |
+| **Classroom mode** | Press `P` for a larger vessel, numbers and figures. `Space` plays or pauses, `R` re-runs, `Esc` exits. |
 | **Export** | Trajectory CSV, full experiment JSON, reactor image and per-chart PNGs. |
 
 ## The model
@@ -64,7 +64,9 @@ npm run dev        # http://localhost:5173
 
 ## How it is built
 
-**Stack:** React 18, TypeScript, Vite, Tailwind CSS, three.js via React Three Fiber, Recharts.
+**Stack:** React 18, TypeScript, Vite, Tailwind CSS, three.js via React Three Fiber, Recharts, Lucide icons.
+
+**Design:** a light, research-software visual system (see [`DESIGN.md`](DESIGN.md)): Schibsted Grotesk for UI, Red Hat Mono for measurements, STIX Two for mathematics, one validated colour per simulated quantity.
 
 ```
 src/simulation/   pure model: kinetics, mass balances, RK4, metrics, presets, validation, export
@@ -74,7 +76,7 @@ src/pages/        Home, Learn, Experiments, Methodology (the Lab lives in compon
 src/content/      equation text and topic lists shown across the site
 ```
 
-- **One trajectory, everywhere.** A run is integrated once; playback only reveals a slice of it, so charts, metric cards and the reactor never disagree.
+- **One trajectory, everywhere.** A run is integrated once; playback only reveals a slice of it, so figures, measurements and the vessel never disagree.
 - **The scene never re-renders per tick.** Simulation updates write to a mutable bus that the WebGL scene damps toward each frame, so playback does not touch the React scene graph.
 - **Cheap to run.** Particles and bubbles are GPU-instanced with the motion in the vertex shader, and only visible particles are drawn. Rendering runs at full rate only while something moves, and pixel ratio adapts to measured smoothness. Charts refresh at 10 Hz during playback and pause off-screen.
 - **Graceful everywhere.** Low-power devices get a lighter scene, `prefers-reduced-motion` is respected, and the SVG reactor takes over if WebGL 2 is unavailable.

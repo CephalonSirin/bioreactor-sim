@@ -1,4 +1,8 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
+import { Pause, Play, RotateCcw } from 'lucide-react'
+import Segmented from '../ui/Segmented'
+import { SERIES } from '../../lib/palette'
+import type { SimPoint } from '../../simulation/types'
 
 interface SimulationControlsProps {
   hasResult: boolean
@@ -10,6 +14,8 @@ interface SimulationControlsProps {
   speed: number
   playbackIndex: number
   pointCount: number
+  /** Full trajectory, drawn faintly behind the timeline for context. */
+  points: SimPoint[]
   onRun: () => void
   onPlay: () => void
   onPause: () => void
@@ -17,9 +23,35 @@ interface SimulationControlsProps {
   onSeek: (index: number) => void
   onSpeedChange: (speed: number) => void
   large?: boolean
+  /** Rendered at the start of the button row (the panel heading). */
+  lead?: React.ReactNode
 }
 
-const SPEEDS = [1, 2, 4, 8, 20]
+const SPEEDS = [1, 2, 4, 8, 20].map((s) => ({ value: s, label: `${s}×`, title: `${s} simulated hour${s > 1 ? 's' : ''} per second` }))
+
+/** The run's X and S curves, normalised, as a strip behind the scrubber. */
+function TimelineStrip({ points }: { points: SimPoint[] }) {
+  const paths = useMemo(() => {
+    if (points.length < 2) return null
+    const step = Math.max(1, Math.floor(points.length / 160))
+    const pts = points.filter((_, i) => i % step === 0 || i === points.length - 1)
+    const tMax = pts[pts.length - 1].t || 1
+    const line = (key: 'X' | 'S') => {
+      const max = Math.max(...pts.map((p) => p[key]), 1e-9)
+      return pts.map((p, i) => `${i ? 'L' : 'M'}${((p.t / tMax) * 1000).toFixed(1)} ${(30 - (p[key] / max) * 26).toFixed(1)}`).join(' ')
+    }
+    const x = line('X')
+    return { x, s: line('S'), area: `${x} L1000 32 L0 32 Z` }
+  }, [points])
+  if (!paths) return null
+  return (
+    <svg viewBox="0 0 1000 32" preserveAspectRatio="none" className="pointer-events-none absolute inset-x-0 top-0 h-full w-full" aria-hidden="true">
+      <path d={paths.area} fill={SERIES.X} opacity="0.08" />
+      <path d={paths.s} fill="none" stroke={SERIES.S} strokeWidth="1.2" opacity="0.45" vectorEffect="non-scaling-stroke" />
+      <path d={paths.x} fill="none" stroke={SERIES.X} strokeWidth="1.4" opacity="0.7" vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
+}
 
 function SimulationControls({
   hasResult,
@@ -31,6 +63,7 @@ function SimulationControls({
   speed,
   playbackIndex,
   pointCount,
+  points,
   onRun,
   onPlay,
   onPause,
@@ -38,77 +71,76 @@ function SimulationControls({
   onSeek,
   onSpeedChange,
   large = false,
+  lead,
 }: SimulationControlsProps) {
   const atEnd = hasResult && progress >= 1
   const started = hasResult && progress > 0
-  const pct = Math.round(progress * 100)
+  const pct = progress * 100
 
   return (
-    <div className={`glass frame flex flex-col gap-3 ${large ? 'p-5' : 'p-3.5'}`}>
-      {stale && (
-        <p className="rounded border border-readout-biomass/40 bg-readout-biomass/10 px-3 py-1.5 text-xs text-readout-biomass" role="status">
-          Parameters changed since the last run. Press “Run experiment” to update the results.
-        </p>
-      )}
+    <div className={`flex flex-col gap-3 ${large ? 'text-base' : ''}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={onRun} className={`btn-primary ${large ? 'px-6 py-3 text-base' : ''}`}>
-          <span aria-hidden="true">▶</span> {hasResult ? 'Re-run experiment' : 'Run experiment'}
+        {lead}
+        <button type="button" onClick={onRun} className={`${stale || !hasResult ? 'btn-accent' : 'btn-secondary'} ${large ? 'btn-lg' : ''}`} title="Integrate the model with the current parameters (R)">
+          <Play className="fill-current" aria-hidden="true" />
+          {!hasResult ? 'Run simulation' : stale ? 'Run with changes' : 'Run again'}
         </button>
-        {isPlaying ? (
-          <button type="button" onClick={onPause} className="btn-ghost">
-            <span aria-hidden="true">❚❚</span> Pause
-          </button>
-        ) : (
-          <button type="button" onClick={onPlay} disabled={!hasResult} className="btn-ghost">
-            <span aria-hidden="true">▶</span> {atEnd ? 'Replay' : started ? 'Resume' : 'Play'}
-          </button>
-        )}
-        <button type="button" onClick={onReset} disabled={!hasResult || (!started && !isPlaying)} className="btn-ghost">
-          <span aria-hidden="true">↺</span> Reset
-        </button>
-
-        <div className="ml-auto flex items-center gap-1" role="group" aria-label="Playback speed">
-          <span className="mr-1 hidden font-mono text-[10px] uppercase tracking-wider text-muted sm:inline">Speed</span>
-          {SPEEDS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              aria-pressed={speed === s}
-              onClick={() => onSpeedChange(s)}
-              title={`${s} simulated hour${s > 1 ? 's' : ''} per real second`}
-              className={`rounded border px-2 py-1 font-mono text-xs transition-colors ${
-                speed === s ? 'border-aqua bg-aqua/15 text-aqua' : 'border-ink-500 text-muted hover:border-aqua/60 hover:text-paper'
-              }`}
-            >
-              {s}×
+        <div className="flex items-center gap-0.5 rounded-md border border-line bg-surface p-0.5">
+          {isPlaying ? (
+            <button type="button" onClick={onPause} className="icon-btn" aria-label="Pause playback" title="Pause (Space)">
+              <Pause className="fill-current" aria-hidden="true" />
             </button>
-          ))}
+          ) : (
+            <button type="button" onClick={onPlay} disabled={!hasResult} className="icon-btn disabled:opacity-40" aria-label={atEnd ? 'Replay' : started ? 'Resume playback' : 'Play'} title="Play (Space)">
+              <Play className="fill-current" aria-hidden="true" />
+            </button>
+          )}
+          <button type="button" onClick={onReset} disabled={!hasResult || (!started && !isPlaying)} className="icon-btn disabled:opacity-40" aria-label="Reset to t = 0" title="Reset to t = 0">
+            <RotateCcw aria-hidden="true" />
+          </button>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="t-label hidden sm:inline">Speed</span>
+          <Segmented value={speed} options={SPEEDS} onChange={onSpeedChange} label="Playback speed, simulated hours per second" itemClassName="!px-2 font-mono !text-label" />
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <span className={`readout-value shrink-0 text-paper ${large ? 'w-44 text-xl' : 'w-32 text-sm'}`}>
-          t = {time.toFixed(1)}
-          <span className="text-muted"> / {duration.toFixed(0)} h</span>
-        </span>
-        <input
-          type="range"
-          aria-label="Simulation timeline"
-          aria-valuetext={`${time.toFixed(1)} hours of ${duration.toFixed(0)} (${pct} percent)`}
-          min={0}
-          max={Math.max(pointCount - 1, 1)}
-          step={1}
-          value={playbackIndex}
-          disabled={!hasResult}
-          onChange={(e) => onSeek(Number(e.target.value))}
-          style={{ ['--slider-fill' as string]: '#46e0c8', ['--slider-pct' as string]: `${pct}%` }}
-          className="disabled:opacity-40"
-        />
-        <span className="w-10 shrink-0 text-right font-mono text-xs text-muted">{pct}%</span>
+        <div className="relative h-8 min-w-0 flex-1">
+          {hasResult && <TimelineStrip points={points} />}
+          <div className="absolute inset-x-0 bottom-0 h-px bg-line" aria-hidden="true" />
+          {hasResult && (
+            // Playhead, aligned with the range thumb's centre (14 px thumb).
+            <div
+              className="pointer-events-none absolute bottom-0 top-0 w-px bg-ink/70"
+              style={{ left: `calc(${pct}% + ${7 - pct * 0.14}px)` }}
+              aria-hidden="true"
+            />
+          )}
+          <input
+            type="range"
+            aria-label="Simulation time"
+            aria-valuetext={`${time.toFixed(1)} of ${duration.toFixed(0)} hours`}
+            min={0}
+            max={Math.max(pointCount - 1, 1)}
+            step={1}
+            value={playbackIndex}
+            disabled={!hasResult}
+            onChange={(e) => onSeek(Number(e.target.value))}
+            style={{ ['--pct' as string]: `${pct}%` }}
+            className="timeline absolute inset-x-0 bottom-[-8px]"
+          />
+        </div>
+        <output className={`num shrink-0 text-right font-mono text-ink ${large ? 'w-40 text-lg' : 'w-[7.5rem] text-ui'}`} aria-live="off">
+          {time.toFixed(1)}
+          <span className="text-ink-3"> / {duration.toFixed(0)} h</span>
+        </output>
       </div>
-      <p className="text-[11px] text-dim">
-        Speed = simulated hours per real second. Charts, metrics and the reactor all read from the same precomputed trajectory, so scrubbing the timeline moves them together.
-      </p>
+      {stale && (
+        <p className="text-label text-warn" role="status">
+          Parameters changed. The charts and vessel still show the previous run until you run again.
+        </p>
+      )}
     </div>
   )
 }

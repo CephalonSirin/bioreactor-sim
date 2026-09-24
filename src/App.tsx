@@ -15,21 +15,21 @@ import type { ReactorType } from './simulation/types'
 const MODE_NAME: Record<ReactorType, string> = { batch: 'Batch', fedbatch: 'Fed-batch', cstr: 'CSTR' }
 
 const TITLES = {
-  home: 'Bioreactor Lab — Interactive Biotechnology Laboratory',
-  lab: 'Bioreactor Lab — Run batch, fed-batch and CSTR simulations',
-  learn: 'Learn — Bioreactor kinetics explained | Bioreactor Lab',
-  experiments: 'Experiment Gallery | Bioreactor Lab',
+  home: 'Bioreactor Lab — Interactive bioprocess simulation',
+  lab: 'Lab — Batch, fed-batch and CSTR simulation | Bioreactor Lab',
+  learn: 'Learn — Bioreactor kinetics | Bioreactor Lab',
+  experiments: 'Experiments | Bioreactor Lab',
   methodology: 'Methodology — Equations and assumptions | Bioreactor Lab',
 } as const
 
 export default function App() {
   const { route, section } = useLocation()
-  const engine = useSimulationEngine(defaultConfigFor('batch'), 'Batch · default')
+  const engine = useSimulationEngine(defaultConfigFor('batch'), 'Default batch')
   const [presenting, setPresenting] = useState(false)
 
   const { load, loadAndRun, compare } = engine
 
-  const launchReactor = useCallback((type: ReactorType) => load(defaultConfigFor(type), `${MODE_NAME[type]} · default`), [load])
+  const launchReactor = useCallback((type: ReactorType) => load(defaultConfigFor(type), `Default ${MODE_NAME[type].toLowerCase()}`), [load])
   const runPreset = useCallback((p: Preset) => loadAndRun(p.build(), p.label), [loadAndRun])
   const comparePresets = useCallback(
     (a: Preset, b: Preset) => {
@@ -70,10 +70,16 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      {!presenting && <Navbar route={route} onLaunchReactor={launchReactor} onRunPreset={runPreset} />}
+      {!presenting && <Navbar route={route} />}
 
-      <main id="main" key={route} className="flex-1 animate-page-in" tabIndex={-1}>
-        <Suspense fallback={<div className="p-16 text-center font-mono text-sm text-muted" role="status">Loading…</div>}>
+      <main id="main" key={route} className="route-in flex-1 focus:outline-none" tabIndex={-1}>
+        <Suspense
+          fallback={
+            <div className="flex min-h-[60vh] items-center justify-center" role="status">
+              <span className="t-meta">Loading…</span>
+            </div>
+          }
+        >
         {route === 'home' && <HomePage onLaunchReactor={launchReactor} onRunPreset={runPreset} />}
         {route === 'lab' && <LabPage engine={engine} presenting={presenting} onPresentingChange={setPresentingMode} />}
         {route === 'learn' && <LearnPage section={section} />}
@@ -82,7 +88,7 @@ export default function App() {
         </Suspense>
       </main>
 
-      {!presenting && <Footer />}
+      {!presenting && route !== 'lab' && <Footer />}
     </div>
   )
 }

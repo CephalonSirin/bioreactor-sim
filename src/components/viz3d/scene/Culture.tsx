@@ -5,6 +5,7 @@ import { CELL_FRAG, CELL_VERT, GLOW_FRAG, POINTS_VERT, RING_FRAG } from '../glsl
 import { particleSeeds, particleSphere, useScene, visibleCount } from '../sceneContext'
 import { IMP_LOW } from '../dims'
 import type { Layers } from '../bus'
+import { SERIES } from '../../../lib/palette'
 
 const COUNTS = {
   high: { cells: 3600, substrate: 1500, product: 700 },
@@ -46,7 +47,7 @@ function Culture({ layers }: { layers: Layers }) {
         uDensity: { value: 0 },
         uScale: { value: 0.0125 },
         uSigma: { value: 0.3 },
-        uCellColor: { value: new THREE.Color('#f2b347') },
+        uCellColor: { value: new THREE.Color('#d99a22') },
         uLiquid: shared.uColor,
         uKeyDir: shared.uKeyDir,
         uFade: shared.uFade,
@@ -76,13 +77,12 @@ function Culture({ layers }: { layers: Layers }) {
         },
         transparent: true,
         depthWrite: false,
-        blending: THREE.AdditiveBlending,
       })
       return { g, m }
     }
 
-    const substrate = points(n.substrate, 23, GLOW_FRAG, '#46e0c8', 21, 0.4, 0.6)
-    const product = points(n.product, 37, RING_FRAG, '#f0805f', 42, 0.28, 0.75)
+    const substrate = points(n.substrate, 23, GLOW_FRAG, SERIES.S, 11, 0.4, 0.75)
+    const product = points(n.product, 37, RING_FRAG, SERIES.P, 30, 0.28, 0.85)
     return { cellGeo, cellMat, substrate, product }
   }, [shared, tier, n])
 
