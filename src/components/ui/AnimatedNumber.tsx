@@ -52,7 +52,9 @@ function AnimatedNumber({ value, digits = 2, duration = 260, className }: Animat
       const goal = target.current
       const cur = shown.current
       if (goal === null || cur === null) return
-      const dt = Math.min(now - last.current, 100)
+      // The first rAF timestamp can precede the performance.now() taken when
+      // the loop started; a negative dt would step the value away from its target.
+      const dt = Math.min(Math.max(now - last.current, 0), 100)
       last.current = now
       const v = cur + (goal - cur) * (1 - Math.exp(-dt / tau))
       const done = Math.abs(goal - v) < eps
